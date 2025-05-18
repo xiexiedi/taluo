@@ -1,13 +1,13 @@
 import React from 'react';
 import Lottie from 'lottie-react';
-import tarotCardsAnimation from '/素材库/tarot-cards.json';
+import animationData from '/素材库/8542345.lottie';
 
 export const LoadingSpinner: React.FC = () => {
   return (
     <div className="flex flex-col items-center justify-center min-h-[200px]">
-      <div className="w-24 h-24">
+      <div className="w-32 h-32">
         <Lottie
-          animationData={tarotCardsAnimation}
+          animationData={animationData}
           loop={true}
           style={{
             filter: 'brightness(0) invert(1)', // Convert animation to white
