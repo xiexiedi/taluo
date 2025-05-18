@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
 import { TarotCard } from '../components/TarotCard';
 import { Info, Share2, Save, ArrowLeft, WifiOff } from 'lucide-react';
-import { db, withOnlineCheck } from '../lib/firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { supabase, withOnlineCheck } from '../lib/supabase';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 
 interface DrawnCard {
@@ -100,10 +99,11 @@ export const DrawCards: React.FC = () => {
         const interpretation = generateInterpretation(cards, spreadId);
         
         const reading = {
-          timestamp: serverTimestamp(),
+          timestamp: new Date().toISOString(),
           date: new Date().toISOString(),
           spreadName,
           spreadId,
+          type: 'reading',
           cards: cards.map((card, index) => ({
             ...card,
             position: getPositionName(spreadId, index),
@@ -112,7 +112,11 @@ export const DrawCards: React.FC = () => {
           interpretation
         };
 
-        await addDoc(collection(db, 'readings'), reading);
+        const { error } = await supabase
+          .from('readings')
+          .insert(reading);
+
+        if (error) throw error;
       });
     } catch (error) {
       setError(error instanceof Error ? error.message : '保存解读时出错，请稍后重试。');

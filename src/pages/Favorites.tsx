@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { TarotCard } from '../components/TarotCard';
 import { CalendarDays, Clock, Search, Edit2, Trash2, Check, X, AlertTriangle, WifiOff } from 'lucide-react';
-import { collection, query, orderBy, getDocs, deleteDoc, doc } from 'firebase/firestore';
-import { db, withOnlineCheck } from '../lib/firebase';
+import { supabase, withOnlineCheck } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 
@@ -42,30 +41,14 @@ export const Favorites: React.FC = () => {
     setError(null);
     try {
       await withOnlineCheck(async () => {
-        // Fetch both daily fortunes and readings
-        const [fortunesSnap, readingsSnap] = await Promise.all([
-          getDocs(query(collection(db, 'fortunes'), orderBy('timestamp', 'desc'))),
-          getDocs(query(collection(db, 'readings'), orderBy('timestamp', 'desc')))
-        ]);
+        const { data: readings, error } = await supabase
+          .from('readings')
+          .select('*')
+          .order('timestamp', { ascending: false });
 
-        const fortunes = fortunesSnap.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          type: 'daily'
-        })) as HistoryRecord[];
+        if (error) throw error;
 
-        const readings = readingsSnap.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data(),
-          type: 'reading'
-        })) as HistoryRecord[];
-
-        // Combine and sort by timestamp
-        const combined = [...fortunes, ...readings].sort((a, b) => 
-          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-        );
-
-        setHistory(combined);
+        setHistory(readings as HistoryRecord[]);
       });
     } catch (error) {
       setError(error instanceof Error ? error.message : '加载历史记录时出错，请稍后重试。');
@@ -107,15 +90,12 @@ export const Favorites: React.FC = () => {
     setDeleting(true);
     try {
       await withOnlineCheck(async () => {
-        const deletePromises = Array.from(selectedItems).map(id => {
-          const record = history.find(item => item.id === id);
-          if (!record) return Promise.resolve();
-          
-          const collectionName = record.type === 'daily' ? 'fortunes' : 'readings';
-          return deleteDoc(doc(db, collectionName, id));
-        });
+        const { error } = await supabase
+          .from('readings')
+          .delete()
+          .in('id', Array.from(selectedItems));
 
-        await Promise.all(deletePromises);
+        if (error) throw error;
         
         setHistory(prev => prev.filter(item => !selectedItems.has(item.id)));
         setSelectedItems(new Set());
