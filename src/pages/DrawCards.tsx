@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { TarotCard } from '../components/TarotCard';
 import { Info, Share2, Save, ArrowLeft, WifiOff } from 'lucide-react';
-import { supabase, withOnlineCheck } from '../lib/supabase';
+import { useAuth } from '../lib/auth';
+import { saveReading } from '../lib/readings';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import type { TarotCard as TarotCardType, ReadingInterpretation } from '../lib/types';
 
 interface DrawnCard {
   name: string;
@@ -20,10 +22,12 @@ interface ReadingInterpretation {
 }
 
 export const DrawCards: React.FC = () => {
+  const { user } = useAuth();
   const [selectedSpread, setSelectedSpread] = useState<string | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [drawnCards, setDrawnCards] = useState<DrawnCard[]>([]);
+  const [drawnCards, setDrawnCards] = useState<TarotCardType[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const spreads = [
     { id: 'single', name: '单张牌阵', count: 1, description: '简单直接的指引' },
@@ -89,36 +93,38 @@ export const DrawCards: React.FC = () => {
     };
   };
 
-  const saveReading = async (
-    cards: DrawnCard[], 
-    spreadName: string, 
+  const handleSaveReading = async (
+    cards: TarotCardType[],
+    spreadName: string,
     spreadId: string
   ) => {
+    if (!user) {
+      setError('请先登录再进行占卜');
+      return;
+    }
+
+    setIsSaving(true);
+    setError(null);
+
     try {
-      await withOnlineCheck(async () => {
-        const interpretation = generateInterpretation(cards, spreadId);
-        
-        const reading = {
-          timestamp: new Date().toISOString(),
-          spreadName,
-          spreadId,
-          type: 'reading',
-          cards: cards.map((card, index) => ({
-            ...card,
-            position: getPositionName(spreadId, index),
-            meaning: generateCardMeaning(card)
-          })),
-          interpretation
-        };
-
-        const { error } = await supabase
-          .from('readings')
-          .insert(reading);
-
-        if (error) throw error;
-      });
-    } catch (error) {
-      setError(error instanceof Error ? error.message : '保存解读时出错，请稍后重试。');
+      const interpretation = generateInterpretation(cards, spreadId);
+      
+      await saveReading(
+        user.id,
+        'reading',
+        spreadId,
+        cards.map((card, index) => ({
+          ...card,
+          position: getPositionName(spreadId, index),
+          meaning: generateCardMeaning(card)
+        })),
+        interpretation
+      );
+    } catch (err) {
+      console.error('Error saving reading:', err);
+      setError(err instanceof Error ? err.message : '保存解读时出错，请稍后重试');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -128,17 +134,15 @@ export const DrawCards: React.FC = () => {
     
     try {
       const shuffled = [...allCardNames].sort(() => 0.5 - Math.random());
-      const selected = shuffled.slice(0, count).map((name, index) => ({
+      const selected = shuffled.slice(0, count).map(name => ({
         name,
         isReversed: Math.random() > 0.7,
-        position: getPositionName(spreadId, index),
-        meaning: ''
       }));
       
       setDrawnCards(selected);
-      await saveReading(selected, spreadName, spreadId);
+      await handleSaveReading(selected, spreadName, spreadId);
     } catch (error) {
-      setError(error instanceof Error ? error.message : '抽牌时出错，请稍后重试。');
+      setError(error instanceof Error ? error.message : '抽牌时出错，请稍后重试');
     } finally {
       setIsDrawing(false);
     }
