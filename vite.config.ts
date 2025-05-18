@@ -1,9 +1,11 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
+  optimizeDeps: {
+    include: ['@use-gesture/react', '@react-spring/web']
+  },
   // Configure static asset handling
   publicDir: 'public',
   assetsInclude: ['**/*.png'],
@@ -14,10 +16,5 @@ export default defineConfig({
   },
   // Configure environment variables
   envDir: './',
-  envPrefix: 'VITE_',
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src')
-    }
-  }
+  envPrefix: 'VITE_'
 });
