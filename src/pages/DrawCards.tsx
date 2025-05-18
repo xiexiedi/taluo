@@ -100,7 +100,6 @@ export const DrawCards: React.FC = () => {
         
         const reading = {
           timestamp: new Date().toISOString(),
-          date: new Date().toISOString(),
           spreadName,
           spreadId,
           type: 'reading',
