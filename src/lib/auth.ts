@@ -88,4 +88,4 @@ export const signUp = async (username: string, password: string) => {
 
 export const signOut = async () => {
   localStorage.removeItem(CURRENT_USER_KEY);
-};</bortAction>
+};

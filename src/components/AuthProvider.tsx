@@ -1,5 +1,5 @@
 import React, { createContext, useEffect, useState } from 'react';
-import { AuthContext, AuthUser } from '../lib/auth';
+import { AuthContext, AuthUser, signIn, signUp, signOut } from '../lib/auth';
 import { LoadingSpinner } from './LoadingSpinner';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
