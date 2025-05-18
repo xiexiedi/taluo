@@ -141,10 +141,15 @@ export const Favorites: React.FC = () => {
           {/* Cards Section */}
           <div className="md:w-1/3 border-b md:border-b-0 md:border-r border-blue-700/40">
             <div className="p-6">
-              <div className={`flex gap-4 ${record.cards.length > 3 ? 'overflow-x-auto scrollbar-hide' : ''}`}>
-                <div className="flex gap-4" style={{ minWidth: record.cards.length > 3 ? 'max-content' : 'auto' }}>
+              <div className="relative">
+                <div className={`flex gap-4 ${record.cards.length > 3 ? 'overflow-x-auto scrollbar-hide' : ''}`} 
+                     style={{ 
+                       maxWidth: '100%',
+                       scrollbarWidth: 'none',
+                       msOverflowStyle: 'none'
+                     }}>
                   {record.cards.map((card, index) => (
-                    <div key={index} className="w-32 flex-shrink-0">
+                    <div key={index} className="w-24 flex-shrink-0">
                       <div className="relative">
                         <TarotCard 
                           name={card.name} 
