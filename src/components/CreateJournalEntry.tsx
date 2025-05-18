@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
+import { useAuth } from '../lib/auth';
 import { supabase } from '../lib/supabase';
 
 interface CreateJournalEntryProps {
@@ -11,6 +12,7 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({
   onClose,
   onSuccess
 }) => {
+  const { user } = useAuth();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [level, setLevel] = useState<'INFO' | 'WARNING' | 'ERROR'>('INFO');
@@ -19,17 +21,24 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      setError('请先登录后再创建日志');
+      return;
+    }
+    
+    if (!title.trim() || !content.trim()) {
+      setError('标题和内容不能为空');
+      return;
+    }
+
     setError(null);
     setIsSubmitting(true);
 
     try {
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-
       const { error: insertError } = await supabase
         .from('journal_entries')
         .insert({
-          user_id: userData.user.id,
+          user_id: user.id,
           title: title.trim(),
           content: content.trim(),
           level,
@@ -41,7 +50,8 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({
       onSuccess();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : '保存日志时发生错误');
+      console.error('Error saving journal entry:', err);
+      setError(err instanceof Error ? err.message : '保存日志时发生错误，请稍后重试');
     } finally {
       setIsSubmitting(false);
     }
