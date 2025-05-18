@@ -1,10 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, PenLine, Search, Calendar, ArrowUpCircle, RefreshCw, AlertCircle, WifiOff } from 'lucide-react';
 import { CreateJournalEntry } from '../components/CreateJournalEntry';
-import { mockJournalEntries, JournalEntry } from '../lib/mockData';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { useAuth } from '../lib/auth';
+
+interface JournalEntry {
+  id: string;
+  title: string;
+  content: string;
+  level: 'INFO' | 'WARNING' | 'ERROR';
+  timestamp: string;
+}
 
 export const Journal: React.FC = () => {
+  const { user } = useAuth();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -13,13 +22,23 @@ export const Journal: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const fetchEntries = async () => {
+    if (!user) return;
+    
     try {
       setError(null);
       setIsRefreshing(true);
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setJournalEntries(mockJournalEntries);
+      const storedEntries = localStorage.getItem('journal_entries');
+      const entries = storedEntries ? JSON.parse(storedEntries) : [];
+      
+      // 过滤出当前用户的日志并按时间排序
+      const userEntries = entries
+        .filter((entry: JournalEntry) => entry.user_id === user.id)
+        .sort((a: JournalEntry, b: JournalEntry) => 
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
+      
+      setJournalEntries(userEntries);
     } catch (err) {
       console.error('Error fetching journal entries:', err);
       setError('获取日志失败，请稍后重试');
@@ -31,7 +50,7 @@ export const Journal: React.FC = () => {
 
   useEffect(() => {
     fetchEntries();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -126,7 +145,7 @@ export const Journal: React.FC = () => {
           {journalEntries.map((entry) => (
             <div 
               key={entry.id}
-              className="bg-blue-800/30 backdrop-blur-sm rounded-xl p-5 border border-blue-700/40 shadow-lg"
+              className="bg-blue-900/20 backdrop-blur-sm rounded-xl p-5 border border-blue-700/40 shadow-lg"
             >
               <div className="flex justify-between items-start mb-3">
                 <h3 className="font-semibold text-white">{entry.title}</h3>
