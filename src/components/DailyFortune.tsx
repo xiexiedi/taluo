@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { TarotCard } from './TarotCard';
-import { supabase } from '../lib/supabase';
 import { LoadingSpinner } from './LoadingSpinner';
 import { useAuth } from '../lib/auth';
-import { saveReading } from '../lib/readings';
+import { saveReading, getReadings } from '../lib/readings';
 
 interface DailyFortuneState {
   card: string | null;
@@ -74,31 +73,20 @@ export const DailyFortune: React.FC = () => {
 
     try {
       const today = getCurrentDate();
+      const readings = await getReadings(user.id);
       
-      const { data: existingFortune, error: fetchError } = await supabase
-        .from('readings')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('type', 'daily')
-        .eq('spread_type', 'daily')
-        .gte('created_at', today)
-        .lt('created_at', new Date(today).getTime() + 86400000)
-        .single();
+      const todaysFortune = readings.find(reading => 
+        reading.type === 'daily' &&
+        reading.spread_type === 'daily' &&
+        reading.created_at.startsWith(today)
+      );
 
-      if (fetchError) {
-        if (fetchError.code === 'PGRST116') {
-          await drawCard();
-          return;
-        }
-        throw fetchError;
-      }
-
-      if (existingFortune) {
+      if (todaysFortune) {
         setFortune({
-          card: existingFortune.cards[0].name,
-          isReversed: existingFortune.cards[0].isReversed,
-          date: existingFortune.created_at,
-          fortune: existingFortune.interpretation
+          card: todaysFortune.cards[0].name,
+          isReversed: todaysFortune.cards[0].isReversed,
+          date: todaysFortune.created_at,
+          fortune: todaysFortune.interpretation
         });
       } else {
         await drawCard();
