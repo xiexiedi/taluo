@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { TarotCard } from '../components/TarotCard';
-import { CalendarDays, Clock, ArrowLeft } from 'lucide-react';
+import { CalendarDays, Clock, ArrowLeft, WifiOff } from 'lucide-react';
 import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db, withOnlineCheck } from '../lib/firebase';
 import { useNavigate } from 'react-router-dom';
 
 interface ReadingDetail {
@@ -32,6 +32,7 @@ export const ReadingDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [reading, setReading] = useState<ReadingDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -39,17 +40,19 @@ export const ReadingDetail: React.FC = () => {
       if (!id) return;
 
       try {
-        const docRef = doc(db, 'readings', id);
-        const docSnap = await getDoc(docRef);
+        await withOnlineCheck(async () => {
+          const docRef = doc(db, 'readings', id);
+          const docSnap = await getDoc(docRef);
 
-        if (docSnap.exists()) {
-          setReading({
-            id: docSnap.id,
-            ...docSnap.data()
-          } as ReadingDetail);
-        }
+          if (docSnap.exists()) {
+            setReading({
+              id: docSnap.id,
+              ...docSnap.data()
+            } as ReadingDetail);
+          }
+        });
       } catch (error) {
-        console.error('Error fetching reading:', error);
+        setError(error instanceof Error ? error.message : '加载解读详情时出错，请稍后重试。');
       } finally {
         setLoading(false);
       }
@@ -79,6 +82,21 @@ export const ReadingDetail: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-300"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <WifiOff className="w-16 h-16 text-indigo-300/50 mb-4" />
+        <h3 className="text-lg font-semibold text-white mb-2">{error}</h3>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+        >
+          重试
+        </button>
       </div>
     );
   }

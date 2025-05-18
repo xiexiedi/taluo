@@ -23,6 +23,7 @@ interface HistoryRecord {
       meaning: string;
     }>;
   };
+  timestamp: string;
 }
 
 export const Favorites: React.FC = () => {
@@ -35,30 +36,69 @@ export const Favorites: React.FC = () => {
   const [deleting, setDeleting] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        await withOnlineCheck(async () => {
-          const querySnapshot = await getDocs(
-            query(collection(db, 'readings'), orderBy('timestamp', 'desc'))
-          );
-          
-          const records = querySnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          })) as HistoryRecord[];
-          
-          setHistory(records);
-        });
-      } catch (error) {
-        setError(error instanceof Error ? error.message : '加载历史记录时出错，请稍后重试。');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchHistory = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      await withOnlineCheck(async () => {
+        // Fetch both daily fortunes and readings
+        const [fortunesSnap, readingsSnap] = await Promise.all([
+          getDocs(query(collection(db, 'fortunes'), orderBy('timestamp', 'desc'))),
+          getDocs(query(collection(db, 'readings'), orderBy('timestamp', 'desc')))
+        ]);
 
+        const fortunes = fortunesSnap.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          type: 'daily'
+        })) as HistoryRecord[];
+
+        const readings = readingsSnap.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          type: 'reading'
+        })) as HistoryRecord[];
+
+        // Combine and sort by timestamp
+        const combined = [...fortunes, ...readings].sort((a, b) => 
+          new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+        );
+
+        setHistory(combined);
+      });
+    } catch (error) {
+      setError(error instanceof Error ? error.message : '加载历史记录时出错，请稍后重试。');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchHistory();
   }, []);
+
+  const toggleEditMode = () => {
+    setIsEditMode(!isEditMode);
+    setSelectedItems(new Set());
+  };
+
+  const toggleItemSelection = (id: string) => {
+    const newSelected = new Set(selectedItems);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedItems(newSelected);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedItems.size === history.length) {
+      setSelectedItems(new Set());
+    } else {
+      setSelectedItems(new Set(history.map(item => item.id)));
+    }
+  };
 
   const handleDelete = async () => {
     if (selectedItems.size === 0) return;
@@ -66,9 +106,14 @@ export const Favorites: React.FC = () => {
     setDeleting(true);
     try {
       await withOnlineCheck(async () => {
-        const deletePromises = Array.from(selectedItems).map(id =>
-          deleteDoc(doc(db, 'readings', id))
-        );
+        const deletePromises = Array.from(selectedItems).map(id => {
+          const record = history.find(item => item.id === id);
+          if (!record) return Promise.resolve();
+          
+          const collectionName = record.type === 'daily' ? 'fortunes' : 'readings';
+          return deleteDoc(doc(db, collectionName, id));
+        });
+
         await Promise.all(deletePromises);
         
         setHistory(prev => prev.filter(item => !selectedItems.has(item.id)));
@@ -82,105 +127,19 @@ export const Favorites: React.FC = () => {
     }
   };
 
-  const renderReadingRecord = (record: HistoryRecord) => {
-    return (
-      <div 
-        key={record.id}
-        className={`bg-blue-800/30 backdrop-blur-sm rounded-xl border ${
-          isEditMode ? 'border-blue-700/40' : selectedItems.has(record.id) ? 'border-indigo-500' : 'border-blue-700/40'
-        } shadow-lg transition-all duration-300 overflow-hidden`}
-      >
-        <div className="p-6 border-b border-blue-700/40">
-          <div className="flex items-start">
-            {isEditMode && (
-              <div 
-                className="mr-4 mt-1"
-                onClick={() => toggleItemSelection(record.id)}
-              >
-                <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors cursor-pointer ${
-                  selectedItems.has(record.id) 
-                    ? 'bg-indigo-600 border-indigo-600' 
-                    : 'border-white/50 hover:border-white'
-                }`}>
-                  {selectedItems.has(record.id) && <Check className="w-4 h-4 text-white" />}
-                </div>
-              </div>
-            )}
-            
-            <div className="flex-1">
-              <div className="flex justify-between items-start">
-                <div>
-                  <h3 className="text-lg font-semibold text-white">{record.spreadName}</h3>
-                  <div className="flex items-center space-x-4 mt-2">
-                    <div className="flex items-center text-sm text-indigo-200/70">
-                      <CalendarDays className="w-4 h-4 mr-1" />
-                      {formatDate(record.date)}
-                    </div>
-                    <div className="flex items-center text-sm text-indigo-200/70">
-                      <Clock className="w-4 h-4 mr-1" />
-                      {formatTime(record.date)}
-                    </div>
-                  </div>
-                </div>
-                <div className="text-xs bg-blue-700/50 text-blue-200 py-1 px-2 rounded-full">
-                  {record.type === 'daily' ? '每日运势' : record.spreadName}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('zh-CN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
 
-        <div className="flex flex-col md:flex-row">
-          <div className="md:w-1/3 border-b md:border-b-0 md:border-r border-blue-700/40">
-            <div className="p-6">
-              <div className="relative">
-                <div className={`flex gap-4 ${record.cards.length > 3 ? 'overflow-x-auto scrollbar-hide' : ''}`}>
-                  {record.cards.map((card, index) => (
-                    <div key={index} className="w-24 flex-shrink-0">
-                      <div className="relative">
-                        <TarotCard 
-                          name={card.name} 
-                          isReversed={card.isReversed} 
-                        />
-                        {card.position && (
-                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                            <p className="text-xs text-white text-center">{card.position}</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="md:w-2/3 p-6">
-            <div className="space-y-4">
-              <div className="bg-blue-900/20 rounded-lg p-4">
-                <h4 className="text-white font-medium mb-2">整体解读</h4>
-                <p className="text-indigo-200/90 line-clamp-3">{record.interpretation.general}</p>
-              </div>
-
-              {record.interpretation.cards && record.interpretation.cards.length > 0 && (
-                <div className="grid grid-cols-1 gap-4">
-                  {record.interpretation.cards.slice(0, 2).map((interpretation, index) => (
-                    <div key={index} className="bg-blue-900/20 rounded-lg p-4">
-                      <h5 className="text-indigo-300 font-medium mb-2">
-                        {interpretation.position}
-                      </h5>
-                      <p className="text-sm text-indigo-200/90 line-clamp-2">
-                        {interpretation.meaning}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString('zh-CN', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   if (error) {
@@ -189,7 +148,7 @@ export const Favorites: React.FC = () => {
         <WifiOff className="w-16 h-16 text-indigo-300/50 mb-4" />
         <h3 className="text-lg font-semibold text-white mb-2">{error}</h3>
         <button
-          onClick={() => window.location.reload()}
+          onClick={fetchHistory}
           className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
         >
           重试
@@ -299,7 +258,104 @@ export const Favorites: React.FC = () => {
         </div>
       ) : history.length > 0 ? (
         <div className="space-y-6">
-          {history.map(record => renderReadingRecord(record))}
+          {history.map(record => (
+            <div 
+              key={record.id}
+              className={`bg-blue-800/30 backdrop-blur-sm rounded-xl border ${
+                isEditMode ? 'border-blue-700/40' : selectedItems.has(record.id) ? 'border-indigo-500' : 'border-blue-700/40'
+              } shadow-lg transition-all duration-300 overflow-hidden`}
+            >
+              <div className="p-6 border-b border-blue-700/40">
+                <div className="flex items-start">
+                  {isEditMode && (
+                    <div 
+                      className="mr-4 mt-1"
+                      onClick={() => toggleItemSelection(record.id)}
+                    >
+                      <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors cursor-pointer ${
+                        selectedItems.has(record.id) 
+                          ? 'bg-indigo-600 border-indigo-600' 
+                          : 'border-white/50 hover:border-white'
+                      }`}>
+                        {selectedItems.has(record.id) && <Check className="w-4 h-4 text-white" />}
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="text-lg font-semibold text-white">{record.spreadName}</h3>
+                        <div className="flex items-center space-x-4 mt-2">
+                          <div className="flex items-center text-sm text-indigo-200/70">
+                            <CalendarDays className="w-4 h-4 mr-1" />
+                            {formatDate(record.timestamp)}
+                          </div>
+                          <div className="flex items-center text-sm text-indigo-200/70">
+                            <Clock className="w-4 h-4 mr-1" />
+                            {formatTime(record.timestamp)}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-xs bg-blue-700/50 text-blue-200 py-1 px-2 rounded-full">
+                        {record.type === 'daily' ? '每日运势' : record.spreadName}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col md:flex-row">
+                <div className="md:w-1/3 border-b md:border-b-0 md:border-r border-blue-700/40">
+                  <div className="p-6">
+                    <div className="relative">
+                      <div className={`flex gap-4 ${record.cards.length > 3 ? 'overflow-x-auto scrollbar-hide' : ''}`}>
+                        {record.cards.map((card, index) => (
+                          <div key={index} className="w-24 flex-shrink-0">
+                            <div className="relative">
+                              <TarotCard 
+                                name={card.name} 
+                                isReversed={card.isReversed} 
+                              />
+                              {card.position && (
+                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                  <p className="text-xs text-white text-center">{card.position}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="md:w-2/3 p-6">
+                  <div className="space-y-4">
+                    <div className="bg-blue-900/20 rounded-lg p-4">
+                      <h4 className="text-white font-medium mb-2">整体解读</h4>
+                      <p className="text-indigo-200/90 line-clamp-3">{record.interpretation.general}</p>
+                    </div>
+
+                    {record.interpretation.cards && record.interpretation.cards.length > 0 && (
+                      <div className="grid grid-cols-1 gap-4">
+                        {record.interpretation.cards.slice(0, 2).map((interpretation, index) => (
+                          <div key={index} className="bg-blue-900/20 rounded-lg p-4">
+                            <h5 className="text-indigo-300 font-medium mb-2">
+                              {interpretation.position}
+                            </h5>
+                            <p className="text-sm text-indigo-200/90 line-clamp-2">
+                              {interpretation.meaning}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-12 text-center">

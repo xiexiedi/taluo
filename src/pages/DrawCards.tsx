@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { TarotCard } from '../components/TarotCard';
-import { Sparkles, Info, Share2, Save, ArrowLeft } from 'lucide-react';
-import { db } from '../lib/firebase';
+import { Sparkles, Info, Share2, Save, ArrowLeft, WifiOff } from 'lucide-react';
+import { db, withOnlineCheck } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 interface DrawnCard {
@@ -23,6 +23,7 @@ export const DrawCards: React.FC = () => {
   const [selectedSpread, setSelectedSpread] = useState<string | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawnCards, setDrawnCards] = useState<DrawnCard[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const spreads = [
     { id: 'single', name: '单张牌阵', count: 1, description: '简单直接的指引' },
@@ -94,32 +95,34 @@ export const DrawCards: React.FC = () => {
     spreadId: string
   ) => {
     try {
-      const interpretation = generateInterpretation(cards, spreadId);
-      
-      const reading = {
-        timestamp: serverTimestamp(),
-        date: new Date().toISOString(),
-        spreadName,
-        spreadId,
-        cards: cards.map((card, index) => ({
-          ...card,
-          position: getPositionName(spreadId, index),
-          meaning: generateCardMeaning(card)
-        })),
-        interpretation
-      };
+      await withOnlineCheck(async () => {
+        const interpretation = generateInterpretation(cards, spreadId);
+        
+        const reading = {
+          timestamp: serverTimestamp(),
+          date: new Date().toISOString(),
+          spreadName,
+          spreadId,
+          cards: cards.map((card, index) => ({
+            ...card,
+            position: getPositionName(spreadId, index),
+            meaning: generateCardMeaning(card)
+          })),
+          interpretation
+        };
 
-      await addDoc(collection(db, 'readings'), reading);
-      console.log('Reading saved successfully');
+        await addDoc(collection(db, 'readings'), reading);
+      });
     } catch (error) {
-      console.error('Error saving reading:', error);
+      setError(error instanceof Error ? error.message : '保存解读时出错，请稍后重试。');
     }
   };
 
   const drawCards = async (count: number, spreadName: string, spreadId: string) => {
     setIsDrawing(true);
+    setError(null);
     
-    setTimeout(async () => {
+    try {
       const shuffled = [...allCardNames].sort(() => 0.5 - Math.random());
       const selected = shuffled.slice(0, count).map((name, index) => ({
         name,
@@ -130,8 +133,11 @@ export const DrawCards: React.FC = () => {
       
       setDrawnCards(selected);
       await saveReading(selected, spreadName, spreadId);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : '抽牌时出错，请稍后重试。');
+    } finally {
       setIsDrawing(false);
-    }, 1500);
+    }
   };
 
   const renderCelticCross = () => {
@@ -332,6 +338,25 @@ export const DrawCards: React.FC = () => {
     setSelectedSpread(null);
     setDrawnCards([]);
   };
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <WifiOff className="w-16 h-16 text-indigo-300/50 mb-4" />
+        <h3 className="text-lg font-semibold text-white mb-2">{error}</h3>
+        <button
+          onClick={() => {
+            setError(null);
+            setSelectedSpread(null);
+            setDrawnCards([]);
+          }}
+          className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+        >
+          重试
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="py-6 space-y-6">
