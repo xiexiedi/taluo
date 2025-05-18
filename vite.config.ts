@@ -8,7 +8,7 @@ export default defineConfig({
   },
   // Configure static asset handling
   publicDir: 'public',
-  assetsInclude: ['**/*.png'],
+  assetsInclude: ['**/*.png', '**/*.json'],
   server: {
     watch: {
       usePolling: true,
