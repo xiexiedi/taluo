@@ -6,7 +6,6 @@ import { useAuth } from '../lib/auth';
 
 interface JournalEntry {
   id: string;
-  user_id: string;
   title: string;
   content: string;
   level: 'INFO' | 'WARNING' | 'ERROR';
@@ -88,18 +87,6 @@ export const Journal: React.FC = () => {
     }
   };
 
-  if (!user) {
-    return (
-      <div className="py-6">
-        <div className="bg-blue-900/20 backdrop-blur-sm rounded-xl p-6 border border-blue-700/40 text-center">
-          <Calendar className="w-12 h-12 text-indigo-300/50 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-white mb-2">请先登录</h3>
-          <p className="text-indigo-200/70">登录后即可记录和查看您的塔罗日志</p>
-        </div>
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div className="py-6">
@@ -158,7 +145,7 @@ export const Journal: React.FC = () => {
           {journalEntries.map((entry) => (
             <div 
               key={entry.id}
-              className="bg-blue-900/20 backdrop-blur-sm rounded-xl p-5 border border-blue-700/40 shadow-lg animate-in fade-in"
+              className="bg-blue-900/20 backdrop-blur-sm rounded-xl p-5 border border-blue-700/40 shadow-lg"
             >
               <div className="flex justify-between items-start mb-3">
                 <h3 className="font-semibold text-white">{entry.title}</h3>
