@@ -10,7 +10,9 @@
     "preview": "npx vite preview"
   },
   "dependencies": {
+    "@react-spring/web": "^9.7.3",
     "@supabase/supabase-js": "^2.39.7",
+    "@use-gesture/react": "^10.3.0",
     "firebase": "^10.8.0",
     "lottie-react": "^2.4.0",
     "lucide-react": "^0.344.0",
