@@ -95,6 +95,7 @@ export const TarotCard: React.FC<TarotCardProps> = ({
   name, 
   isReversed = false 
 }) => {
+  const [isFlipped, setIsFlipped] = useState(false);
   const [showFullscreen, setShowFullscreen] = useState(false);
   const [imageError, setImageError] = useState(false);
 
@@ -117,38 +118,58 @@ export const TarotCard: React.FC<TarotCardProps> = ({
     setShowFullscreen(!showFullscreen);
   };
 
+  const handleFlip = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsFlipped(!isFlipped);
+  };
+
   return (
     <>
-      <div className="aspect-[1/1.6] relative group max-w-[200px] mx-auto">
-        <div className={`w-full h-full rounded-lg shadow-lg overflow-hidden ${isReversed ? 'rotate-180' : ''}`}>
-          {!imageError ? (
-            <div className="relative w-full h-full">
-              <img 
-                src={getCardImageUrl(name)}
-                alt={name}
-                className="w-full h-full object-contain bg-gradient-to-br from-blue-900 to-purple-900 rounded-lg"
-                onError={handleImageError}
-              />
-              <button
-                onClick={toggleFullscreen}
-                className="absolute top-2 right-2 p-1.5 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <Maximize2 className="w-4 h-4 text-white" />
-              </button>
+      <div className="perspective aspect-[1/1.6] relative group max-w-[200px] mx-auto">
+        <div 
+          className={`preserve-3d relative w-full h-full transition-transform duration-600 cursor-pointer ${
+            isFlipped ? 'rotate-y-180' : ''
+          }`}
+          onClick={handleFlip}
+        >
+          {/* Card Back */}
+          <div className="backface-hidden absolute w-full h-full">
+            <div className="w-full h-full rounded-lg shadow-lg overflow-hidden bg-gradient-to-br from-blue-800 to-purple-900 border-2 border-blue-700/30">
+              <div className="w-full h-full bg-[url('/card-back-pattern.png')] bg-repeat opacity-20" />
             </div>
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-blue-900 to-purple-900 border border-blue-700/30 rounded-lg flex items-center justify-center p-4">
-              <div className="text-indigo-300 text-center">
-                <div className="font-semibold mb-2">{cardNameMap[name] || name}</div>
-                <div className="text-sm opacity-80">图片加载失败</div>
+          </div>
+
+          {/* Card Front */}
+          <div className={`backface-hidden absolute w-full h-full rotate-y-180 ${isReversed ? 'rotate-180' : ''}`}>
+            {!imageError ? (
+              <div className="relative w-full h-full">
+                <img 
+                  src={getCardImageUrl(name)}
+                  alt={name}
+                  className="w-full h-full object-contain bg-gradient-to-br from-blue-900 to-purple-900 rounded-lg"
+                  onError={handleImageError}
+                />
+                <button
+                  onClick={toggleFullscreen}
+                  className="absolute top-2 right-2 p-1.5 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <Maximize2 className="w-4 h-4 text-white" />
+                </button>
               </div>
-            </div>
-          )}
-          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
-            <p className="text-white text-xs font-semibold">{cardNameMap[name] || name}</p>
-            {isReversed && (
-              <span className="text-red-300 text-[10px]">逆位</span>
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-blue-900 to-purple-900 border border-blue-700/30 rounded-lg flex items-center justify-center p-4">
+                <div className="text-indigo-300 text-center">
+                  <div className="font-semibold mb-2">{cardNameMap[name] || name}</div>
+                  <div className="text-sm opacity-80">图片加载失败</div>
+                </div>
+              </div>
             )}
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+              <p className="text-white text-xs font-semibold">{cardNameMap[name] || name}</p>
+              {isReversed && (
+                <span className="text-red-300 text-[10px]">逆位</span>
+              )}
+            </div>
           </div>
         </div>
       </div>
