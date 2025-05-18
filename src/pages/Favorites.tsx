@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { TarotCard } from '../components/TarotCard';
-import { CalendarDays, Clock, Search, Edit2, Trash2, Check, X, AlertTriangle } from 'lucide-react';
+import { CalendarDays, Clock, Search, Edit2, Trash2, Check, X, AlertTriangle, WifiOff } from 'lucide-react';
 import { collection, query, orderBy, getDocs, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db, withOnlineCheck } from '../lib/firebase';
 import { useNavigate } from 'react-router-dom';
 
 interface HistoryRecord {
@@ -28,13 +28,59 @@ interface HistoryRecord {
 export const Favorites: React.FC = () => {
   const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const navigate = useNavigate();
 
-  // ... (保持其他函数不变)
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        await withOnlineCheck(async () => {
+          const querySnapshot = await getDocs(
+            query(collection(db, 'readings'), orderBy('timestamp', 'desc'))
+          );
+          
+          const records = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          })) as HistoryRecord[];
+          
+          setHistory(records);
+        });
+      } catch (error) {
+        setError(error instanceof Error ? error.message : '加载历史记录时出错，请稍后重试。');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchHistory();
+  }, []);
+
+  const handleDelete = async () => {
+    if (selectedItems.size === 0) return;
+    
+    setDeleting(true);
+    try {
+      await withOnlineCheck(async () => {
+        const deletePromises = Array.from(selectedItems).map(id =>
+          deleteDoc(doc(db, 'readings', id))
+        );
+        await Promise.all(deletePromises);
+        
+        setHistory(prev => prev.filter(item => !selectedItems.has(item.id)));
+        setSelectedItems(new Set());
+        setShowDeleteConfirm(false);
+      });
+    } catch (error) {
+      setError(error instanceof Error ? error.message : '删除记录时出错，请稍后重试。');
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const renderReadingRecord = (record: HistoryRecord) => {
     return (
@@ -84,7 +130,6 @@ export const Favorites: React.FC = () => {
           </div>
         </div>
 
-        {/* 保持卡片和解读部分不变 */}
         <div className="flex flex-col md:flex-row">
           <div className="md:w-1/3 border-b md:border-b-0 md:border-r border-blue-700/40">
             <div className="p-6">
@@ -138,11 +183,23 @@ export const Favorites: React.FC = () => {
     );
   };
 
-  // ... (保持其他部分不变)
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-center">
+        <WifiOff className="w-16 h-16 text-indigo-300/50 mb-4" />
+        <h3 className="text-lg font-semibold text-white mb-2">{error}</h3>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+        >
+          重试
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="py-6 space-y-6">
-      {/* 保持头部和确认对话框不变 */}
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-white">历史记录</h2>
         <div className="flex items-center space-x-3">
@@ -189,7 +246,6 @@ export const Favorites: React.FC = () => {
         </div>
       </div>
 
-      {/* 保持删除确认对话框不变 */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-blue-900/90 rounded-xl border border-blue-700/50 p-6 max-w-md w-full">
@@ -237,7 +293,6 @@ export const Favorites: React.FC = () => {
         </div>
       )}
       
-      {/* 保持记录列表渲染不变 */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-300"></div>
