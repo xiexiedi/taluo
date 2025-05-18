@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { TarotCard } from '../components/TarotCard';
-import { CalendarDays, Clock, Search, Edit2, Trash2, Check, X, AlertTriangle, WifiOff } from 'lucide-react';
-import { getReadings, deleteReading, Reading } from '../lib/readings';
+import { CalendarDays, Clock, Search, Edit2, Trash2, Check, X, AlertTriangle, WifiOff, Star } from 'lucide-react';
+import { useAuth } from '../lib/auth';
+import { getReadings, deleteReading, toggleFavorite } from '../lib/readings';
 import { useNavigate } from 'react-router-dom';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import type { Reading } from '../lib/types';
 
 export const Favorites: React.FC = () => {
+  const { user } = useAuth();
   const [readings, setReadings] = useState<Reading[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -16,13 +19,16 @@ export const Favorites: React.FC = () => {
   const navigate = useNavigate();
 
   const fetchReadings = async () => {
+    if (!user) return;
+    
     setLoading(true);
     setError(null);
+    
     try {
-      const data = await getReadings();
+      const data = await getReadings(user.id);
       setReadings(data);
     } catch (error) {
-      setError(error instanceof Error ? error.message : '加载历史记录时出错，请稍后重试。');
+      setError(error instanceof Error ? error.message : '加载历史记录时出错，请稍后重试');
     } finally {
       setLoading(false);
     }
@@ -30,7 +36,7 @@ export const Favorites: React.FC = () => {
 
   useEffect(() => {
     fetchReadings();
-  }, []);
+  }, [user]);
 
   const toggleEditMode = () => {
     setIsEditMode(!isEditMode);
@@ -56,21 +62,36 @@ export const Favorites: React.FC = () => {
   };
 
   const handleDelete = async () => {
-    if (selectedItems.size === 0) return;
+    if (!user || selectedItems.size === 0) return;
     
     setDeleting(true);
     try {
       await Promise.all(
-        Array.from(selectedItems).map(id => deleteReading(id))
+        Array.from(selectedItems).map(id => deleteReading(id, user.id))
       );
       
       setReadings(prev => prev.filter(item => !selectedItems.has(item.id)));
       setSelectedItems(new Set());
       setShowDeleteConfirm(false);
     } catch (error) {
-      setError(error instanceof Error ? error.message : '删除记录时出错，请稍后重试。');
+      setError(error instanceof Error ? error.message : '删除记录时出错，请稍后重试');
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleToggleFavorite = async (readingId: string, currentStatus: boolean) => {
+    if (!user) return;
+    
+    try {
+      const updated = await toggleFavorite(readingId, user.id, !currentStatus);
+      setReadings(prev => 
+        prev.map(reading => 
+          reading.id === readingId ? updated : reading
+        )
+      );
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
     }
   };
 
@@ -156,6 +177,128 @@ export const Favorites: React.FC = () => {
         </div>
       </div>
 
+      {readings.length > 0 ? (
+        <div className="space-y-6">
+          {readings.map(reading => (
+            <div 
+              key={reading.id}
+              className={`bg-blue-800/30 backdrop-blur-sm rounded-xl border ${
+                isEditMode ? 'border-blue-700/40' : selectedItems.has(reading.id) ? 'border-indigo-500' : 'border-blue-700/40'
+              } shadow-lg transition-all duration-300 overflow-hidden`}
+            >
+              <div className="p-6 border-b border-blue-700/40">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start">
+                    {isEditMode && (
+                      <div 
+                        className="mr-4 mt-1"
+                        onClick={() => toggleItemSelection(reading.id)}
+                      >
+                        <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors cursor-pointer ${
+                          selectedItems.has(reading.id) 
+                            ? 'bg-indigo-600 border-indigo-600' 
+                            : 'border-white/50 hover:border-white'
+                        }`}>
+                          {selectedItems.has(reading.id) && <Check className="w-4 h-4 text-white" />}
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div>
+                      <h3 className="text-lg font-semibold text-white">{reading.spread_type}</h3>
+                      <div className="flex items-center space-x-4 mt-2">
+                        <div className="flex items-center text-sm text-indigo-200/70">
+                          <CalendarDays className="w-4 h-4 mr-1" />
+                          {formatDate(reading.created_at)}
+                        </div>
+                        <div className="flex items-center text-sm text-indigo-200/70">
+                          <Clock className="w-4 h-4 mr-1" />
+                          {formatTime(reading.created_at)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handleToggleFavorite(reading.id, reading.is_favorite)}
+                      className={`p-2 rounded-full transition-colors ${
+                        reading.is_favorite 
+                          ? 'text-yellow-400 hover:text-yellow-500' 
+                          : 'text-indigo-300/50 hover:text-indigo-300'
+                      }`}
+                    >
+                      <Star className="w-5 h-5" fill={reading.is_favorite ? 'currentColor' : 'none'} />
+                    </button>
+                    <div className="text-xs bg-blue-700/50 text-blue-200 py-1 px-2 rounded-full">
+                      {reading.type === 'daily' ? '每日运势' : reading.spread_type}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col md:flex-row">
+                <div className="md:w-1/3 border-b md:border-b-0 md:border-r border-blue-700/40">
+                  <div className="p-6">
+                    <div className="relative">
+                      <div className={`flex gap-4 ${reading.cards.length > 3 ? 'overflow-x-auto scrollbar-hide' : ''}`}>
+                        {reading.cards.map((card, index) => (
+                          <div key={index} className="w-24 flex-shrink-0">
+                            <div className="relative">
+                              <TarotCard 
+                                name={card.name} 
+                                isReversed={card.isReversed} 
+                              />
+                              {card.position && (
+                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                                  <p className="text-xs text-white text-center">{card.position}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="md:w-2/3 p-6">
+                  <div className="space-y-4">
+                    <div className="bg-blue-900/20 rounded-lg p-4">
+                      <h4 className="text-white font-medium mb-2">整体解读</h4>
+                      <p className="text-indigo-200/90 line-clamp-3">{reading.interpretation.general}</p>
+                    </div>
+
+                    {reading.interpretation.cards && reading.interpretation.cards.length > 0 && (
+                      <div className="grid grid-cols-1 gap-4">
+                        {reading.interpretation.cards.slice(0, 2).map((interpretation, index) => (
+                          <div key={index} className="bg-blue-900/20 rounded-lg p-4">
+                            <h5 className="text-indigo-300 font-medium mb-2">
+                              {interpretation.position}
+                            </h5>
+                            <p className="text-sm text-indigo-200/90 line-clamp-2">
+                              {interpretation.meaning}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12">
+          <CalendarDays className="w-12 h-12 text-indigo-300/50 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-white mb-2">暂无历史记录</h3>
+          <p className="text-indigo-200/70 max-w-xs mx-auto">
+            您的塔罗牌解读历史将会显示在这里，方便回顾过往的占卜结果。
+          </p>
+        </div>
+      )}
+
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-blue-900/90 rounded-xl border border-blue-700/50 p-6 max-w-md w-full">
@@ -200,117 +343,6 @@ export const Favorites: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
-      )}
-      
-      {readings.length > 0 ? (
-        <div className="space-y-6">
-          {readings.map(record => (
-            <div 
-              key={record.id}
-              className={`bg-blue-800/30 backdrop-blur-sm rounded-xl border ${
-                isEditMode ? 'border-blue-700/40' : selectedItems.has(record.id) ? 'border-indigo-500' : 'border-blue-700/40'
-              } shadow-lg transition-all duration-300 overflow-hidden`}
-            >
-              <div className="p-6 border-b border-blue-700/40">
-                <div className="flex items-start">
-                  {isEditMode && (
-                    <div 
-                      className="mr-4 mt-1"
-                      onClick={() => toggleItemSelection(record.id)}
-                    >
-                      <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors cursor-pointer ${
-                        selectedItems.has(record.id) 
-                          ? 'bg-indigo-600 border-indigo-600' 
-                          : 'border-white/50 hover:border-white'
-                      }`}>
-                        {selectedItems.has(record.id) && <Check className="w-4 h-4 text-white" />}
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div className="flex-1">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="text-lg font-semibold text-white">{record.spreadName}</h3>
-                        <div className="flex items-center space-x-4 mt-2">
-                          <div className="flex items-center text-sm text-indigo-200/70">
-                            <CalendarDays className="w-4 h-4 mr-1" />
-                            {formatDate(record.created_at)}
-                          </div>
-                          <div className="flex items-center text-sm text-indigo-200/70">
-                            <Clock className="w-4 h-4 mr-1" />
-                            {formatTime(record.created_at)}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-xs bg-blue-700/50 text-blue-200 py-1 px-2 rounded-full">
-                        {record.type === 'daily' ? '每日运势' : record.spreadName}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex flex-col md:flex-row">
-                <div className="md:w-1/3 border-b md:border-b-0 md:border-r border-blue-700/40">
-                  <div className="p-6">
-                    <div className="relative">
-                      <div className={`flex gap-4 ${record.cards.length > 3 ? 'overflow-x-auto scrollbar-hide' : ''}`}>
-                        {record.cards.map((card, index) => (
-                          <div key={index} className="w-24 flex-shrink-0">
-                            <div className="relative">
-                              <TarotCard 
-                                name={card.name} 
-                                isReversed={card.isReversed} 
-                              />
-                              {card.position && (
-                                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                                  <p className="text-xs text-white text-center">{card.position}</p>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="md:w-2/3 p-6">
-                  <div className="space-y-4">
-                    <div className="bg-blue-900/20 rounded-lg p-4">
-                      <h4 className="text-white font-medium mb-2">整体解读</h4>
-                      <p className="text-indigo-200/90 line-clamp-3">{record.interpretation.general}</p>
-                    </div>
-
-                    {record.interpretation.cards && record.interpretation.cards.length > 0 && (
-                      <div className="grid grid-cols-1 gap-4">
-                        {record.interpretation.cards.slice(0, 2).map((interpretation, index) => (
-                          <div key={index} className="bg-blue-900/20 rounded-lg p-4">
-                            <h5 className="text-indigo-300 font-medium mb-2">
-                              {interpretation.position}
-                            </h5>
-                            <p className="text-sm text-indigo-200/90 line-clamp-2">
-                              {interpretation.meaning}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <CalendarDays className="w-16 h-16 text-indigo-300/50 mb-4" />
-          <h3 className="text-lg font-semibold text-white mb-2">暂无历史记录</h3>
-          <p className="text-indigo-200/70 max-w-xs mx-auto">
-            您的塔罗牌解读历史将会显示在这里，方便回顾过往的占卜结果。
-          </p>
         </div>
       )}
     </div>
