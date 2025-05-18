@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-import { useAuth } from '../lib/auth';
+import { supabase } from '../lib/supabase';
 
 interface CreateJournalEntryProps {
   onClose: () => void;
@@ -11,7 +11,6 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({
   onClose,
   onSuccess
 }) => {
-  const { user } = useAuth();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [level, setLevel] = useState<'INFO' | 'WARNING' | 'ERROR'>('INFO');
@@ -20,44 +19,29 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) {
-      setError('请先登录');
-      return;
-    }
-
-    if (!title.trim() || !content.trim()) {
-      setError('标题和内容不能为空');
-      return;
-    }
-
     setError(null);
     setIsSubmitting(true);
 
     try {
-      const entry = {
-        id: crypto.randomUUID(),
-        user_id: user.id,
-        title: title.trim(),
-        content: content.trim(),
-        level,
-        timestamp: new Date().toISOString()
-      };
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
 
-      // 从本地存储获取现有日志
-      const storedEntries = localStorage.getItem('journal_entries');
-      const entries = storedEntries ? JSON.parse(storedEntries) : [];
-      
-      // 添加新日志
-      entries.unshift(entry);
-      
-      // 保存到本地存储
-      localStorage.setItem('journal_entries', JSON.stringify(entries));
+      const { error: insertError } = await supabase
+        .from('journal_entries')
+        .insert({
+          user_id: userData.user.id,
+          title: title.trim(),
+          content: content.trim(),
+          level,
+          timestamp: new Date().toISOString()
+        });
+
+      if (insertError) throw insertError;
 
       onSuccess();
       onClose();
     } catch (err) {
-      console.error('Error saving journal entry:', err);
-      setError('保存日志时发生错误，请重试');
+      setError(err instanceof Error ? err.message : '保存日志时发生错误');
     } finally {
       setIsSubmitting(false);
     }
@@ -65,7 +49,7 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({
 
   return (
     <div className="fixed inset-0 bg-blue-950/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-blue-900/80 backdrop-blur-md rounded-xl border border-blue-700/50 w-full max-w-2xl shadow-xl animate-in fade-in slide-in-from-bottom-4">
+      <div className="bg-blue-900/80 backdrop-blur-md rounded-xl border border-blue-700/50 w-full max-w-2xl shadow-xl">
         <div className="flex items-center justify-between p-4 border-b border-blue-700/50">
           <h2 className="text-xl font-semibold text-white">写新日志</h2>
           <button
