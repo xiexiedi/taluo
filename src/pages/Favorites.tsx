@@ -112,63 +112,81 @@ export const Favorites: React.FC = () => {
       <div 
         key={record.id}
         onClick={() => navigate(`/reading/${record.id}`)}
-        className="bg-blue-800/30 backdrop-blur-sm rounded-xl p-6 border border-blue-700/40 shadow-lg hover:bg-blue-800/40 transition-all duration-300 cursor-pointer"
+        className="bg-blue-800/30 backdrop-blur-sm rounded-xl border border-blue-700/40 shadow-lg hover:bg-blue-800/40 transition-all duration-300 cursor-pointer overflow-hidden"
       >
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <h3 className="text-lg font-semibold text-white">{record.spreadName}</h3>
-            <div className="flex items-center space-x-4 mt-2">
-              <div className="flex items-center text-sm text-indigo-200/70">
-                <CalendarDays className="w-4 h-4 mr-1" />
-                {formatDate(record.date)}
-              </div>
-              <div className="flex items-center text-sm text-indigo-200/70">
-                <Clock className="w-4 h-4 mr-1" />
-                {formatTime(record.date)}
+        {/* Header */}
+        <div className="p-6 border-b border-blue-700/40">
+          <div className="flex justify-between items-start">
+            <div>
+              <h3 className="text-lg font-semibold text-white">{record.spreadName}</h3>
+              <div className="flex items-center space-x-4 mt-2">
+                <div className="flex items-center text-sm text-indigo-200/70">
+                  <CalendarDays className="w-4 h-4 mr-1" />
+                  {formatDate(record.date)}
+                </div>
+                <div className="flex items-center text-sm text-indigo-200/70">
+                  <Clock className="w-4 h-4 mr-1" />
+                  {formatTime(record.date)}
+                </div>
               </div>
             </div>
-          </div>
-          <div className="text-xs bg-blue-700/50 text-blue-200 py-1 px-2 rounded-full">
-            {record.type === 'daily' ? '每日运势' : record.spreadName}
+            <div className="text-xs bg-blue-700/50 text-blue-200 py-1 px-2 rounded-full">
+              {record.type === 'daily' ? '每日运势' : record.spreadName}
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6">
-          {record.cards.map((card, index) => (
-            <div key={index} className="aspect-[2/3] relative">
-              <TarotCard 
-                name={card.name} 
-                isReversed={card.isReversed} 
-              />
-              {card.position && (
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
-                  <p className="text-xs text-white text-center">{card.position}</p>
+        {/* Content */}
+        <div className="flex flex-col md:flex-row">
+          {/* Cards Section */}
+          <div className="md:w-1/3 border-b md:border-b-0 md:border-r border-blue-700/40">
+            <div className="p-6">
+              <div className={`flex gap-4 ${record.cards.length > 3 ? 'overflow-x-auto scrollbar-hide' : ''}`}>
+                <div className="flex gap-4" style={{ minWidth: record.cards.length > 3 ? 'max-content' : 'auto' }}>
+                  {record.cards.map((card, index) => (
+                    <div key={index} className="w-32 flex-shrink-0">
+                      <div className="relative">
+                        <TarotCard 
+                          name={card.name} 
+                          isReversed={card.isReversed} 
+                        />
+                        {card.position && (
+                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                            <p className="text-xs text-white text-center">{card.position}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Interpretation Section */}
+          <div className="md:w-2/3 p-6">
+            <div className="space-y-4">
+              <div className="bg-blue-900/20 rounded-lg p-4">
+                <h4 className="text-white font-medium mb-2">整体解读</h4>
+                <p className="text-indigo-200/90 line-clamp-3">{record.interpretation.general}</p>
+              </div>
+
+              {record.interpretation.cards && record.interpretation.cards.length > 0 && (
+                <div className="grid grid-cols-1 gap-4">
+                  {record.interpretation.cards.slice(0, 2).map((interpretation, index) => (
+                    <div key={index} className="bg-blue-900/20 rounded-lg p-4">
+                      <h5 className="text-indigo-300 font-medium mb-2">
+                        {interpretation.position}
+                      </h5>
+                      <p className="text-sm text-indigo-200/90 line-clamp-2">
+                        {interpretation.meaning}
+                      </p>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
-          ))}
-        </div>
-
-        <div className="space-y-4">
-          <div className="bg-blue-900/20 rounded-lg p-4">
-            <h4 className="text-white font-medium mb-2">整体解读</h4>
-            <p className="text-indigo-200/90">{record.interpretation.general}</p>
           </div>
-
-          {record.interpretation.cards && record.interpretation.cards.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {record.interpretation.cards.map((interpretation, index) => (
-                <div key={index} className="bg-blue-900/20 rounded-lg p-4">
-                  <h5 className="text-indigo-300 font-medium mb-2">
-                    {interpretation.position}
-                  </h5>
-                  <p className="text-sm text-indigo-200/90">
-                    {interpretation.meaning}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </div>
     );
