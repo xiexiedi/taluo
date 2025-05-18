@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { TarotCard } from './TarotCard';
-import { WifiOff } from 'lucide-react';
-import { supabase, withOnlineCheck } from '../lib/supabase';
+import { Sparkles } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 interface DailyFortuneState {
   card: string | null;
   isReversed: boolean;
+  date: string;
   fortune: {
     general: string;
     love: string;
@@ -31,7 +32,34 @@ const fortuneTemplates = {
       health: '注意不要过分劳累',
     }
   },
-  // ... other card templates
+  'The Magician': {
+    upright: {
+      general: '今天你将充满创造力和行动力',
+      love: '表达你的真实感受会带来好结果',
+      career: '是实现目标的好时机',
+      health: '保持积极的心态对健康有益',
+    },
+    reversed: {
+      general: '当心自我怀疑影响判断',
+      love: '避免操控或被操控的关系',
+      career: '需要更务实的计划',
+      health: '注意压力管理',
+    }
+  },
+  'The High Priestess': {
+    upright: {
+      general: '倾听你的直觉，它会指引你',
+      love: '保持神秘感会增添魅力',
+      career: '深入思考将带来突破',
+      health: '冥想对身心都有帮助',
+    },
+    reversed: {
+      general: '不要忽视内心的声音',
+      love: '需要更多的自我认知',
+      career: '避免过度分析',
+      health: '关注内在平衡',
+    }
+  },
 };
 
 const getRandomCard = () => {
@@ -50,145 +78,151 @@ const getRandomColor = () => {
 const getRandomNumber = () => Math.floor(Math.random() * 9) + 1;
 
 export const DailyFortune: React.FC = () => {
-  const [fortune, setFortune] = useState<DailyFortuneState | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
+  const [fortune, setFortune] = useState<DailyFortuneState | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [hasDrawn, setHasDrawn] = useState(false);
 
-  const getCurrentDateRange = () => {
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const endOfDay = new Date(startOfDay);
-    endOfDay.setDate(endOfDay.getDate() + 1);
-    
-    return {
-      start: startOfDay.toISOString(),
-      end: endOfDay.toISOString()
-    };
+  const getCurrentDate = () => {
+    const date = new Date();
+    return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
   };
 
   const loadFortune = async () => {
     try {
-      return await withOnlineCheck(async () => {
-        const dateRange = getCurrentDateRange();
-        const { data, error } = await supabase
-          .from('readings')
-          .select('*')
-          .gte('timestamp', dateRange.start)
-          .lt('timestamp', dateRange.end)
-          .eq('type', 'daily')
-          .single();
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) {
+        throw new Error('请先登录');
+      }
 
-        if (error) {
-          if (error.code !== 'PGRST116') { // No rows returned
-            throw error;
-          }
+      const { data: existingFortune, error: fetchError } = await supabase
+        .from('readings')
+        .select('*')
+        .eq('user_id', user.user.id)
+        .eq('type', 'daily')
+        .eq('created_at::date', new Date().toISOString().split('T')[0])
+        .single();
+
+      if (fetchError) {
+        if (fetchError.code === 'PGRST116') {
+          // No fortune exists for today, create new one
           return false;
         }
+        throw fetchError;
+      }
 
-        if (data) {
-          setFortune(data as DailyFortuneState);
-          setHasDrawn(true);
-          return true;
-        }
-        return false;
-      });
-    } catch (error) {
-      setError(error instanceof Error ? error.message : '加载运势时出错，请稍后重试。');
+      if (existingFortune) {
+        setFortune({
+          card: existingFortune.cards[0].name,
+          isReversed: existingFortune.cards[0].isReversed,
+          date: existingFortune.created_at,
+          fortune: existingFortune.interpretation
+        });
+        return true;
+      }
+
+      return false;
+    } catch (err) {
+      console.error('Error loading fortune:', err);
+      setError(err instanceof Error ? err.message : '加载运势时出错');
       return false;
     }
   };
 
   const saveFortune = async (data: DailyFortuneState) => {
     try {
-      await withOnlineCheck(async () => {
-        const timestamp = new Date().toISOString();
-        
-        const fortuneRecord = {
-          ...data,
-          timestamp,
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) {
+        throw new Error('请先登录');
+      }
+
+      const { error: insertError } = await supabase
+        .from('readings')
+        .insert({
+          user_id: user.user.id,
           type: 'daily',
-          spreadName: '今日运势',
-          spreadId: 'daily',
+          spread_type: 'daily',
           cards: [{
             name: data.card,
-            isReversed: data.isReversed,
-            position: '今日运势'
+            isReversed: data.isReversed
           }],
-          interpretation: {
-            general: data.fortune.general,
-            cards: [{
-              position: '今日运势',
-              meaning: data.fortune.general
-            }]
-          }
-        };
+          notes: data.fortune.general,
+          is_favorite: false
+        });
 
-        const { error } = await supabase
-          .from('readings')
-          .insert(fortuneRecord);
-
-        if (error) throw error;
-      });
-    } catch (error) {
-      setError(error instanceof Error ? error.message : '保存运势时出错，请稍后重试。');
+      if (insertError) throw insertError;
+    } catch (err) {
+      console.error('Error saving fortune:', err);
+      setError(err instanceof Error ? err.message : '保存运势时出错');
     }
   };
 
-  const drawCard = async () => {
+  const drawCard = () => {
     setIsDrawing(true);
     setError(null);
     
-    try {
-      const card = getRandomCard();
-      const isReversed = Math.random() > 0.7;
-      const template = fortuneTemplates[card] || fortuneTemplates['The Fool'];
-      const interpretation = isReversed ? template.reversed : template.upright;
-      
-      const newFortune: DailyFortuneState = {
-        card,
-        isReversed,
-        fortune: {
-          ...interpretation,
-          luckyColor: getRandomColor(),
-          luckyNumber: getRandomNumber(),
-        }
-      };
-      
-      await saveFortune(newFortune);
-      setFortune(newFortune);
-      setHasDrawn(true);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : '抽取运势时出错，请稍后重试。');
-    } finally {
-      setIsDrawing(false);
-    }
+    setTimeout(async () => {
+      try {
+        const card = getRandomCard();
+        const isReversed = Math.random() > 0.7;
+        const template = fortuneTemplates[card] || fortuneTemplates['The Fool'];
+        const interpretation = isReversed ? template.reversed : template.upright;
+        
+        const newFortune: DailyFortuneState = {
+          card,
+          isReversed,
+          date: getCurrentDate(),
+          fortune: {
+            ...interpretation,
+            luckyColor: getRandomColor(),
+            luckyNumber: getRandomNumber(),
+          }
+        };
+        
+        await saveFortune(newFortune);
+        setFortune(newFortune);
+      } catch (err) {
+        console.error('Error drawing card:', err);
+        setError(err instanceof Error ? err.message : '抽取塔罗牌时出错');
+      } finally {
+        setIsDrawing(false);
+      }
+    }, 1500);
   };
 
   useEffect(() => {
-    loadFortune();
+    loadFortune().then(hasExisting => {
+      if (!hasExisting) {
+        drawCard();
+      }
+    });
   }, []);
 
   if (error) {
     return (
-      <div className="bg-gradient-to-r from-purple-900/60 to-blue-900/60 backdrop-blur-sm rounded-xl border border-purple-700/30 shadow-lg p-6">
-        <div className="flex flex-col items-center justify-center py-8 text-center">
-          <WifiOff className="w-12 h-12 text-indigo-300 mb-4" />
-          <p className="text-indigo-200 mb-2">{error}</p>
-          <button
-            onClick={() => {
-              setError(null);
-              loadFortune().then(hasExisting => {
-                if (!hasExisting) {
-                  setHasDrawn(false);
-                }
-              });
-            }}
-            className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
-          >
-            重试
-          </button>
-        </div>
+      <div className="bg-red-900/20 backdrop-blur-sm rounded-xl p-6 border border-red-700/30 text-center">
+        <p className="text-red-200 mb-4">{error}</p>
+        <button
+          onClick={() => {
+            setError(null);
+            loadFortune().then(hasExisting => {
+              if (!hasExisting) {
+                drawCard();
+              }
+            });
+          }}
+          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+        >
+          重试
+        </button>
+      </div>
+    );
+  }
+
+  if (!fortune) {
+    return (
+      <div className="bg-blue-900/20 backdrop-blur-sm rounded-xl p-6 border border-blue-700/30 text-center">
+        <Sparkles className="w-8 h-8 text-indigo-300 mx-auto mb-4 animate-pulse" />
+        <p className="text-indigo-200">正在加载今日运势...</p>
       </div>
     );
   }
@@ -203,18 +237,17 @@ export const DailyFortune: React.FC = () => {
           </span>
         </div>
 
-        {!hasDrawn ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <p className="text-indigo-200 mb-6">抽取今日运势，获取塔罗指引</p>
-            <button
-              onClick={drawCard}
-              disabled={isDrawing}
-              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors disabled:opacity-50"
-            >
-              {isDrawing ? '抽取中...' : '抽取运势'}
-            </button>
+        {isDrawing ? (
+          <div className="flex flex-col items-center justify-center py-8">
+            <div className="relative">
+              <Sparkles className="w-12 h-12 text-indigo-300 animate-pulse" />
+              <div className="absolute inset-0 animate-spin duration-3000">
+                <Sparkles className="w-12 h-12 text-purple-300 opacity-70" />
+              </div>
+            </div>
+            <p className="text-indigo-200 mt-4 animate-pulse">正在抽取今日运势...</p>
           </div>
-        ) : fortune && (
+        ) : (
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
             <div className="md:col-span-4">
               <TarotCard 
@@ -254,6 +287,14 @@ export const DailyFortune: React.FC = () => {
                   <p className="text-indigo-200/90 text-sm">{fortune.fortune.health}</p>
                 </div>
               </div>
+              
+              <button 
+                onClick={drawCard}
+                disabled={isDrawing}
+                className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-lg transition-colors"
+              >
+                重新抽牌
+              </button>
             </div>
           </div>
         )}
