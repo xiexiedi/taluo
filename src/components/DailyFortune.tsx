@@ -74,10 +74,30 @@ export const DailyFortune: React.FC = () => {
 
   const saveFortune = async (data: DailyFortuneState) => {
     const docRef = doc(db, 'fortunes', data.date);
-    await setDoc(docRef, {
+    const timestamp = new Date().toISOString();
+    
+    // Format the data to match the history record structure
+    const fortuneRecord = {
       ...data,
-      timestamp: new Date().toISOString()
-    });
+      timestamp,
+      type: 'daily',
+      spreadName: '今日运势',
+      spreadId: 'daily',
+      cards: [{
+        name: data.card,
+        isReversed: data.isReversed,
+        position: '今日运势'
+      }],
+      interpretation: {
+        general: data.fortune.general,
+        cards: [{
+          position: '今日运势',
+          meaning: data.fortune.general
+        }]
+      }
+    };
+
+    await setDoc(docRef, fortuneRecord);
   };
 
   const drawCard = () => {
