@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { TarotCard } from './TarotCard';
 import { WifiOff } from 'lucide-react';
-import { db, withOnlineCheck } from '../lib/firebase';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { supabase, withOnlineCheck } from '../lib/supabase';
 
 interface DailyFortuneState {
   card: string | null;
@@ -66,12 +65,22 @@ export const DailyFortune: React.FC = () => {
     try {
       return await withOnlineCheck(async () => {
         const currentDate = getCurrentDate();
-        const docRef = doc(db, 'fortunes', currentDate);
-        const docSnap = await getDoc(docRef);
+        const { data, error } = await supabase
+          .from('readings')
+          .select('*')
+          .eq('date', currentDate)
+          .eq('type', 'daily')
+          .single();
 
-        if (docSnap.exists()) {
-          const data = docSnap.data() as DailyFortuneState;
-          setFortune(data);
+        if (error) {
+          if (error.code !== 'PGRST116') { // No rows returned
+            throw error;
+          }
+          return false;
+        }
+
+        if (data) {
+          setFortune(data as DailyFortuneState);
           setHasDrawn(true);
           return true;
         }
@@ -86,7 +95,6 @@ export const DailyFortune: React.FC = () => {
   const saveFortune = async (data: DailyFortuneState) => {
     try {
       await withOnlineCheck(async () => {
-        const docRef = doc(db, 'fortunes', data.date);
         const timestamp = new Date().toISOString();
         
         const fortuneRecord = {
@@ -109,7 +117,11 @@ export const DailyFortune: React.FC = () => {
           }
         };
 
-        await setDoc(docRef, fortuneRecord);
+        const { error } = await supabase
+          .from('readings')
+          .insert(fortuneRecord);
+
+        if (error) throw error;
       });
     } catch (error) {
       setError(error instanceof Error ? error.message : '保存运势时出错，请稍后重试。');
