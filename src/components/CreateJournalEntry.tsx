@@ -51,7 +51,7 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({
       onClose();
     } catch (err) {
       console.error('Error saving journal entry:', err);
-      setError(err instanceof Error ? err.message : '保存日志时发生错误，请稍后重试');
+      setError('保存日志时发生错误，请稍后重试');
     } finally {
       setIsSubmitting(false);
     }
