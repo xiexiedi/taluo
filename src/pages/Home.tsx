@@ -122,7 +122,7 @@ export const Home: React.FC = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Major Arcana */}
-          <div className="bg-blue-800/30 backdrop-blur-sm rounded-xl p-6 border border-blue-700/40">
+          <div className="bg-blue-900/20 backdrop-blur-sm rounded-xl p-6 border border-blue-700/40">
             <div className="space-y-4">
               <h4 className="text-lg font-semibold text-white">大阿卡纳</h4>
               <div className="flex space-x-3">
@@ -153,7 +153,7 @@ export const Home: React.FC = () => {
           </div>
 
           {/* Minor Arcana */}
-          <div className="bg-blue-800/30 backdrop-blur-sm rounded-xl p-6 border border-blue-700/40">
+          <div className="bg-blue-900/20 backdrop-blur-sm rounded-xl p-6 border border-blue-700/40">
             <div className="space-y-4">
               <h4 className="text-lg font-semibold text-white">小阿卡纳</h4>
               <div className="flex flex-wrap gap-3">
@@ -191,7 +191,7 @@ export const Home: React.FC = () => {
       </section>
       
       {/* Beginner's Guide */}
-      <section className="bg-blue-800/30 backdrop-blur-sm rounded-xl p-4 border border-blue-700/40 shadow-lg">
+      <section className="bg-blue-900/20 backdrop-blur-sm rounded-xl p-4 border border-blue-700/40 shadow-lg">
         <h3 className="text-lg font-semibold text-white mb-2">塔罗新手？</h3>
         <p className="text-indigo-200/80 mb-3">跟随我们的新手指南，探索古老的塔罗奥秘。</p>
         <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors">
