@@ -1,4 +1,5 @@
 import React from 'react';
+import { BrowserRouter } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { Home } from './pages/Home';
 import { Favorites } from './pages/Favorites';
@@ -6,7 +7,7 @@ import { DrawCards } from './pages/DrawCards';
 import { Journal } from './pages/Journal';
 import { Profile } from './pages/Profile';
 
-function App() {
+function AppContent() {
   const [currentPage, setCurrentPage] = React.useState('home');
 
   // Render the current page based on navigation
@@ -31,6 +32,14 @@ function App() {
     <Layout currentPage={currentPage} onNavigate={setCurrentPage}>
       {renderPage()}
     </Layout>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
   );
 }
 
