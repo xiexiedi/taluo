@@ -145,7 +145,7 @@ export const Home: React.FC = () => {
               <div className="flex space-x-4 pb-4 scrollbar-hide" style={{ width: 'max-content' }}>
                 {getFilteredMajorArcana().map((card, index) => (
                   <div key={index} className="w-32 flex-shrink-0">
-                    <TarotCard name={card} isReversed={false} />
+                    <TarotCard name={card} />
                   </div>
                 ))}
               </div>
@@ -181,7 +181,7 @@ export const Home: React.FC = () => {
               <div className="flex space-x-4 pb-4 scrollbar-hide" style={{ width: 'max-content' }}>
                 {getFilteredMinorArcana().map((card, index) => (
                   <div key={index} className="w-32 flex-shrink-0">
-                    <TarotCard name={card} isReversed={false} />
+                    <TarotCard name={card} />
                   </div>
                 ))}
               </div>
