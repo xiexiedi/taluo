@@ -7,6 +7,8 @@ import { DrawCards } from './pages/DrawCards';
 import { Journal } from './pages/Journal';
 import { Profile } from './pages/Profile';
 import { ReadingDetail } from './pages/ReadingDetail';
+import { AuthProvider } from './components/AuthProvider';
+import { AuthGuard } from './components/AuthGuard';
 
 function AppContent() {
   const [currentPage, setCurrentPage] = React.useState('home');
@@ -28,7 +30,11 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <AppContent />
+      <AuthProvider>
+        <AuthGuard>
+          <AppContent />
+        </AuthGuard>
+      </AuthProvider>
     </Router>
   );
 }
