@@ -1,32 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { TarotCard } from '../components/TarotCard';
 import { CalendarDays, Clock, Search, Edit2, Trash2, Check, X, AlertTriangle, WifiOff } from 'lucide-react';
-import { supabase, withOnlineCheck } from '../lib/supabase';
+import { getReadings, deleteReading, Reading } from '../lib/readings';
 import { useNavigate } from 'react-router-dom';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 
-interface HistoryRecord {
-  id: string;
-  type: 'daily' | 'reading';
-  created_at: string;
-  spreadName: string;
-  spreadId: string;
-  cards: Array<{
-    name: string;
-    isReversed: boolean;
-    position?: string;
-  }>;
-  interpretation: {
-    general: string;
-    cards?: Array<{
-      position: string;
-      meaning: string;
-    }>;
-  };
-}
-
 export const Favorites: React.FC = () => {
-  const [history, setHistory] = useState<HistoryRecord[]>([]);
+  const [readings, setReadings] = useState<Reading[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -35,20 +15,12 @@ export const Favorites: React.FC = () => {
   const [deleting, setDeleting] = useState(false);
   const navigate = useNavigate();
 
-  const fetchHistory = async () => {
+  const fetchReadings = async () => {
     setLoading(true);
     setError(null);
     try {
-      await withOnlineCheck(async () => {
-        const { data: readings, error } = await supabase
-          .from('readings')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-
-        setHistory(readings as HistoryRecord[]);
-      });
+      const data = await getReadings();
+      setReadings(data);
     } catch (error) {
       setError(error instanceof Error ? error.message : '加载历史记录时出错，请稍后重试。');
     } finally {
@@ -57,7 +29,7 @@ export const Favorites: React.FC = () => {
   };
 
   useEffect(() => {
-    fetchHistory();
+    fetchReadings();
   }, []);
 
   const toggleEditMode = () => {
@@ -76,10 +48,10 @@ export const Favorites: React.FC = () => {
   };
 
   const handleSelectAll = () => {
-    if (selectedItems.size === history.length) {
+    if (selectedItems.size === readings.length) {
       setSelectedItems(new Set());
     } else {
-      setSelectedItems(new Set(history.map(item => item.id)));
+      setSelectedItems(new Set(readings.map(item => item.id)));
     }
   };
 
@@ -88,18 +60,13 @@ export const Favorites: React.FC = () => {
     
     setDeleting(true);
     try {
-      await withOnlineCheck(async () => {
-        const { error } = await supabase
-          .from('readings')
-          .delete()
-          .in('id', Array.from(selectedItems));
-
-        if (error) throw error;
-        
-        setHistory(prev => prev.filter(item => !selectedItems.has(item.id)));
-        setSelectedItems(new Set());
-        setShowDeleteConfirm(false);
-      });
+      await Promise.all(
+        Array.from(selectedItems).map(id => deleteReading(id))
+      );
+      
+      setReadings(prev => prev.filter(item => !selectedItems.has(item.id)));
+      setSelectedItems(new Set());
+      setShowDeleteConfirm(false);
     } catch (error) {
       setError(error instanceof Error ? error.message : '删除记录时出错，请稍后重试。');
     } finally {
@@ -132,7 +99,7 @@ export const Favorites: React.FC = () => {
         <WifiOff className="w-16 h-16 text-indigo-300/50 mb-4" />
         <h3 className="text-lg font-semibold text-white mb-2">{error}</h3>
         <button
-          onClick={fetchHistory}
+          onClick={fetchReadings}
           className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
         >
           重试
@@ -146,7 +113,7 @@ export const Favorites: React.FC = () => {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-white">历史记录</h2>
         <div className="flex items-center space-x-3">
-          {history.length > 0 && (
+          {readings.length > 0 && (
             <>
               {isEditMode ? (
                 <>
@@ -154,7 +121,7 @@ export const Favorites: React.FC = () => {
                     onClick={handleSelectAll}
                     className="px-4 py-2 bg-blue-800/50 text-indigo-200 rounded-lg hover:bg-blue-800/70 transition-colors"
                   >
-                    {selectedItems.size === history.length ? '取消全选' : '全选'}
+                    {selectedItems.size === readings.length ? '取消全选' : '全选'}
                   </button>
                   <button
                     onClick={() => setShowDeleteConfirm(true)}
@@ -236,9 +203,9 @@ export const Favorites: React.FC = () => {
         </div>
       )}
       
-      {history.length > 0 ? (
+      {readings.length > 0 ? (
         <div className="space-y-6">
-          {history.map(record => (
+          {readings.map(record => (
             <div 
               key={record.id}
               className={`bg-blue-800/30 backdrop-blur-sm rounded-xl border ${
