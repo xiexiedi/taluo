@@ -81,55 +81,43 @@ const getRandomColor = () => {
 const getRandomNumber = () => Math.floor(Math.random() * 9) + 1;
 
 export const DailyFortune: React.FC = () => {
+  const { user } = useAuth();
   const [isDrawing, setIsDrawing] = useState(false);
   const [fortune, setFortune] = useState<DailyFortuneState | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    setIsAuthenticated(!!session);
-    if (session) {
-      loadFortune().then(hasExisting => {
-        if (!hasExisting) {
-          drawCard();
-        }
-      });
+    if (user) {
+      loadFortune();
     }
-  };
+  }, [user]);
 
   const getCurrentDate = () => {
     const date = new Date();
-    return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   };
 
   const loadFortune = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setIsAuthenticated(false);
-        return false;
-      }
+    if (!user) return;
 
-      const today = new Date().toISOString().split('T')[0];
-      
+    try {
+      const today = getCurrentDate();
+      const tomorrow = new Date(new Date(today).getTime() + 86400000).toISOString();
+
       const { data: existingFortune, error: fetchError } = await supabase
         .from('readings')
         .select('*')
-        .eq('user_id', session.user.id)
+        .eq('user_id', user.id)
         .eq('spread_type', 'daily')
         .eq('type', 'daily')
         .gte('created_at', today)
-        .lt('created_at', new Date(new Date(today).getTime() + 86400000).toISOString())
+        .lt('created_at', tomorrow)
         .single();
 
       if (fetchError) {
         if (fetchError.code === 'PGRST116') {
-          return false;
+          await drawCard();
+          return;
         }
         throw fetchError;
       }
@@ -141,27 +129,21 @@ export const DailyFortune: React.FC = () => {
           date: existingFortune.created_at,
           fortune: existingFortune.interpretation
         });
-        return true;
+      } else {
+        await drawCard();
       }
-
-      return false;
     } catch (err) {
       console.error('Error loading fortune:', err);
       setError(err instanceof Error ? err.message : '加载运势时出错');
-      return false;
     }
   };
 
   const saveFortune = async (data: DailyFortuneState) => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        setIsAuthenticated(false);
-        return;
-      }
+    if (!user) return;
 
+    try {
       await saveReading(
-        session.user.id,
+        user.id,
         'daily',
         'daily',
         [{
@@ -183,53 +165,41 @@ export const DailyFortune: React.FC = () => {
     }
   };
 
-  const drawCard = () => {
+  const drawCard = async () => {
     setIsDrawing(true);
     setError(null);
     
-    setTimeout(async () => {
-      try {
-        const card = getRandomCard();
-        const isReversed = Math.random() > 0.7;
-        const template = fortuneTemplates[card] || fortuneTemplates['The Fool'];
-        const interpretation = isReversed ? template.reversed : template.upright;
-        
-        const newFortune: DailyFortuneState = {
-          card,
-          isReversed,
-          date: getCurrentDate(),
-          fortune: {
-            ...interpretation,
-            luckyColor: getRandomColor(),
-            luckyNumber: getRandomNumber(),
-          }
-        };
-        
-        await saveFortune(newFortune);
-        setFortune(newFortune);
-      } catch (err) {
-        console.error('Error drawing card:', err);
-        setError(err instanceof Error ? err.message : '抽取塔罗牌时出错');
-      } finally {
-        setIsDrawing(false);
-      }
-    }, 1500);
+    try {
+      const card = getRandomCard();
+      const isReversed = Math.random() > 0.7;
+      const template = fortuneTemplates[card] || fortuneTemplates['The Fool'];
+      const interpretation = isReversed ? template.reversed : template.upright;
+      
+      const newFortune: DailyFortuneState = {
+        card,
+        isReversed,
+        date: getCurrentDate(),
+        fortune: {
+          ...interpretation,
+          luckyColor: getRandomColor(),
+          luckyNumber: getRandomNumber(),
+        }
+      };
+      
+      await saveFortune(newFortune);
+      setFortune(newFortune);
+    } catch (err) {
+      console.error('Error drawing card:', err);
+      setError(err instanceof Error ? err.message : '抽取塔罗牌时出错');
+    } finally {
+      setIsDrawing(false);
+    }
   };
 
-  if (isAuthenticated === null) {
-    return <LoadingSpinner />;
-  }
-
-  if (!isAuthenticated) {
+  if (!user) {
     return (
       <div className="bg-purple-900/20 backdrop-blur-sm rounded-xl p-6 border border-purple-700/30 text-center">
         <p className="text-purple-200 mb-4">请先登录以查看今日运势</p>
-        <button
-          onClick={checkAuth}
-          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
-        >
-          重试
-        </button>
       </div>
     );
   }
@@ -241,11 +211,7 @@ export const DailyFortune: React.FC = () => {
         <button
           onClick={() => {
             setError(null);
-            loadFortune().then(hasExisting => {
-              if (!hasExisting) {
-                drawCard();
-              }
-            });
+            loadFortune();
           }}
           className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
         >
