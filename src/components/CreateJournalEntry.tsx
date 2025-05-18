@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { useAuth } from '../lib/auth';
+import { saveJournalEntry } from '../lib/mockData';
 
 interface CreateJournalEntryProps {
   onClose: () => void;
@@ -11,6 +12,7 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({
   onClose,
   onSuccess
 }) => {
+  const { user } = useAuth();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [level, setLevel] = useState<'INFO' | 'WARNING' | 'ERROR'>('INFO');
@@ -19,29 +21,24 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
+    
     setError(null);
     setIsSubmitting(true);
 
     try {
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-
-      const { error: insertError } = await supabase
-        .from('journal_entries')
-        .insert({
-          user_id: userData.user.id,
-          title: title.trim(),
-          content: content.trim(),
-          level,
-          timestamp: new Date().toISOString()
-        });
-
-      if (insertError) throw insertError;
+      await saveJournalEntry({
+        user_id: user.id,
+        title: title.trim(),
+        content: content.trim(),
+        level,
+        timestamp: new Date().toISOString()
+      });
 
       onSuccess();
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : '保存日志时发生错误');
+      setError(err instanceof Error ? err.message : '保存日志时出错');
     } finally {
       setIsSubmitting(false);
     }
