@@ -1,19 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BookOpen, PenLine, Search, Calendar, ArrowUpCircle, RefreshCw, AlertCircle, WifiOff } from 'lucide-react';
 import { CreateJournalEntry } from '../components/CreateJournalEntry';
 import { JournalDetailModal } from '../components/JournalDetailModal';
-import { useJournal } from '../lib/journal';
+import { mockJournalEntries, JournalEntry } from '../lib/mockData';
 import { LoadingSpinner } from '../components/LoadingSpinner';
-import type { JournalEntry } from '../lib/journal';
 
 export const Journal: React.FC = () => {
-  const { entries, stats, loading, error, refreshEntries } = useJournal();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
+  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
   const [showScrollTop, setShowScrollTop] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  React.useEffect(() => {
+  const fetchEntries = async () => {
+    try {
+      setError(null);
+      setIsRefreshing(true);
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setJournalEntries(mockJournalEntries);
+    } catch (err) {
+      console.error('Error fetching journal entries:', err);
+      setError('获取日志失败，请稍后重试');
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchEntries();
+  }, []);
+
+  useEffect(() => {
     const handleScroll = () => {
       setShowScrollTop(window.scrollY > 300);
     };
@@ -61,34 +84,33 @@ export const Journal: React.FC = () => {
           <h3 className="text-lg font-semibold text-white mb-2">加载失败</h3>
           <p className="text-red-200/90 mb-4">{error}</p>
           <button
-            onClick={refreshEntries}
+            onClick={fetchEntries}
             className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg transition-colors inline-flex items-center"
+            disabled={isRefreshing}
           >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            重试
+            <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? '重试中...' : '重试'}
           </button>
         </div>
       </div>
     );
   }
 
-  if (loading) {
+  if (isLoading) {
     return <LoadingSpinner />;
   }
 
   return (
     <div className="py-6 space-y-6">
       <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-white">塔罗日志</h2>
-          <p className="text-indigo-200/70 mt-1">共 {stats.total} 条记录</p>
-        </div>
+        <h2 className="text-2xl font-bold text-white">塔罗日志</h2>
         <div className="flex space-x-3">
           <button 
-            onClick={refreshEntries}
-            className="p-2 rounded-full bg-blue-800/50 text-indigo-200"
+            onClick={fetchEntries}
+            className="p-2 rounded-full bg-blue-800/50 text-indigo-200 disabled:opacity-50"
+            disabled={isRefreshing}
           >
-            <RefreshCw className="w-5 h-5" />
+            <RefreshCw className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} />
           </button>
           <button className="p-2 rounded-full bg-blue-800/50 text-indigo-200">
             <Search className="w-5 h-5" />
@@ -107,9 +129,9 @@ export const Journal: React.FC = () => {
         写新日志
       </button>
       
-      {entries.length > 0 ? (
+      {journalEntries.length > 0 ? (
         <div className="space-y-5">
-          {entries.map((entry) => (
+          {journalEntries.map((entry) => (
             <div 
               key={entry.id}
               className="bg-blue-900/20 backdrop-blur-sm rounded-xl p-5 border border-blue-700/40 shadow-lg hover:border-blue-600/50 transition-colors cursor-pointer"
@@ -165,7 +187,7 @@ export const Journal: React.FC = () => {
       {showCreateModal && (
         <CreateJournalEntry
           onClose={() => setShowCreateModal(false)}
-          onSuccess={refreshEntries}
+          onSuccess={fetchEntries}
         />
       )}
 
