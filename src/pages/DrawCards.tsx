@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { TarotCard } from '../components/TarotCard';
-import { Sparkles, Info, Share2, Save, ArrowLeft, WifiOff } from 'lucide-react';
+import { Info, Share2, Save, ArrowLeft, WifiOff } from 'lucide-react';
 import { db, withOnlineCheck } from '../lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 interface DrawnCard {
   name: string;
@@ -358,6 +359,10 @@ export const DrawCards: React.FC = () => {
     );
   }
 
+  if (isDrawing) {
+    return <LoadingSpinner />;
+  }
+
   return (
     <div className="py-6 space-y-6">
       <div className="flex items-center justify-between mb-6">
@@ -395,18 +400,6 @@ export const DrawCards: React.FC = () => {
               </button>
             ))}
           </div>
-        </div>
-      )}
-      
-      {isDrawing && (
-        <div className="flex flex-col items-center justify-center py-12">
-          <div className="relative">
-            <Sparkles className="w-16 h-16 text-indigo-300 animate-pulse" />
-            <div className="absolute inset-0 animate-spin duration-3000">
-              <Sparkles className="w-16 h-16 text-purple-300 opacity-70" />
-            </div>
-          </div>
-          <p className="text-indigo-200 mt-6 animate-pulse">正在抽取塔罗牌...</p>
         </div>
       )}
       

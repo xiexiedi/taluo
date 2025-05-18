@@ -5,6 +5,7 @@ import { CalendarDays, Clock, ArrowLeft, WifiOff } from 'lucide-react';
 import { doc, getDoc } from 'firebase/firestore';
 import { db, withOnlineCheck } from '../lib/firebase';
 import { useNavigate } from 'react-router-dom';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 interface ReadingDetail {
   id: string;
@@ -79,11 +80,7 @@ export const ReadingDetail: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-300"></div>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   if (error) {
