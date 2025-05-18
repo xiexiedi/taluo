@@ -2,8 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { TarotCard } from '../components/TarotCard';
 import { CalendarDays, Clock, ArrowLeft, WifiOff } from 'lucide-react';
-import { doc, getDoc } from 'firebase/firestore';
-import { db, withOnlineCheck } from '../lib/firebase';
+import { supabase, withOnlineCheck } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 
@@ -42,14 +41,16 @@ export const ReadingDetail: React.FC = () => {
 
       try {
         await withOnlineCheck(async () => {
-          const docRef = doc(db, 'readings', id);
-          const docSnap = await getDoc(docRef);
+          const { data, error } = await supabase
+            .from('readings')
+            .select('*')
+            .eq('id', id)
+            .single();
 
-          if (docSnap.exists()) {
-            setReading({
-              id: docSnap.id,
-              ...docSnap.data()
-            } as ReadingDetail);
+          if (error) throw error;
+
+          if (data) {
+            setReading(data as ReadingDetail);
           }
         });
       } catch (error) {
