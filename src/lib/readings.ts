@@ -1,123 +1,141 @@
 import { supabase } from './supabase';
+import type { Reading, TarotCard, ReadingInterpretation } from './types';
 
-export interface Reading {
-  id: string;
-  user_id: string;
-  created_at: string;
-  spread_type: string;
-  question?: string;
-  cards: Array<{
-    name: string;
-    isReversed: boolean;
-    position?: string;
-  }>;
-  interpretation: {
-    general: string;
-    cards?: Array<{
-      position: string;
-      meaning: string;
-    }>;
-  };
-  notes?: string;
-  is_favorite: boolean;
+export class ReadingError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'ReadingError';
+  }
 }
 
-export async function saveReading(reading: Omit<Reading, 'id' | 'user_id' | 'created_at'>) {
+export async function saveReading(
+  userId: string,
+  type: 'daily' | 'reading',
+  spreadType: string,
+  cards: TarotCard[],
+  interpretation: ReadingInterpretation,
+  notes?: string
+): Promise<Reading> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
+    // Validate input
+    if (!userId) throw new ReadingError('User ID is required');
+    if (!cards.length) throw new ReadingError('Cards are required');
+    if (!interpretation.general) throw new ReadingError('Interpretation is required');
+
+    const reading = {
+      user_id: userId,
+      type,
+      spread_type: spreadType,
+      cards,
+      interpretation,
+      notes,
+      is_favorite: false,
+    };
 
     const { data, error } = await supabase
       .from('readings')
-      .insert({
-        ...reading,
-        user_id: user.id
-      })
+      .insert(reading)
       .select()
       .single();
 
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Error saving reading:', error);
-    throw new Error('Failed to save reading. Please try again.');
-  }
-}
+    if (error) {
+      console.error('Error saving reading:', error);
+      throw new ReadingError(error.message);
+    }
 
-export async function getReadings() {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
-
-    const { data, error } = await supabase
-      .from('readings')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    return data as Reading[];
-  } catch (error) {
-    console.error('Error fetching readings:', error);
-    throw new Error('Failed to fetch readings. Please try again.');
-  }
-}
-
-export async function getReadingById(id: string) {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
-
-    const { data, error } = await supabase
-      .from('readings')
-      .select('*')
-      .eq('id', id)
-      .single();
-
-    if (error) throw error;
     return data as Reading;
   } catch (error) {
-    console.error('Error fetching reading:', error);
-    throw new Error('Failed to fetch reading. Please try again.');
+    console.error('Error in saveReading:', error);
+    throw error instanceof ReadingError ? error : new ReadingError('Failed to save reading');
   }
 }
 
-export async function updateReading(id: string, updates: Partial<Reading>) {
+export async function getReadings(userId: string): Promise<Reading[]> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
+    const { data, error } = await supabase
+      .from('readings')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
 
+    if (error) {
+      console.error('Error fetching readings:', error);
+      throw new ReadingError(error.message);
+    }
+
+    return data as Reading[];
+  } catch (error) {
+    console.error('Error in getReadings:', error);
+    throw error instanceof ReadingError ? error : new ReadingError('Failed to fetch readings');
+  }
+}
+
+export async function updateReading(
+  readingId: string,
+  userId: string,
+  updates: Partial<Reading>
+): Promise<Reading> {
+  try {
     const { data, error } = await supabase
       .from('readings')
       .update(updates)
-      .eq('id', id)
+      .eq('id', readingId)
+      .eq('user_id', userId) // Ensure user owns the reading
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error updating reading:', error);
+      throw new ReadingError(error.message);
+    }
+
     return data as Reading;
   } catch (error) {
-    console.error('Error updating reading:', error);
-    throw new Error('Failed to update reading. Please try again.');
+    console.error('Error in updateReading:', error);
+    throw error instanceof ReadingError ? error : new ReadingError('Failed to update reading');
   }
 }
 
-export async function deleteReading(id: string) {
+export async function deleteReading(readingId: string, userId: string): Promise<void> {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('User not authenticated');
-
     const { error } = await supabase
       .from('readings')
       .delete()
-      .eq('id', id);
+      .eq('id', readingId)
+      .eq('user_id', userId); // Ensure user owns the reading
 
-    if (error) throw error;
+    if (error) {
+      console.error('Error deleting reading:', error);
+      throw new ReadingError(error.message);
+    }
   } catch (error) {
-    console.error('Error deleting reading:', error);
-    throw new Error('Failed to delete reading. Please try again.');
+    console.error('Error in deleteReading:', error);
+    throw error instanceof ReadingError ? error : new ReadingError('Failed to delete reading');
   }
 }
 
-export async function toggleFavorite(id: string, isFavorite: boolean) {
-  return updateReading(id, { is_favorite: isFavorite });
+export async function toggleFavorite(
+  readingId: string,
+  userId: string,
+  isFavorite: boolean
+): Promise<Reading> {
+  try {
+    const { data, error } = await supabase
+      .from('readings')
+      .update({ is_favorite: isFavorite })
+      .eq('id', readingId)
+      .eq('user_id', userId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error toggling favorite:', error);
+      throw new ReadingError(error.message);
+    }
+
+    return data as Reading;
+  } catch (error) {
+    console.error('Error in toggleFavorite:', error);
+    throw error instanceof ReadingError ? error : new ReadingError('Failed to update favorite status');
+  }
 }
