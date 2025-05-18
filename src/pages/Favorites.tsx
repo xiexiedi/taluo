@@ -4,6 +4,7 @@ import { CalendarDays, Clock, Search, Edit2, Trash2, Check, X, AlertTriangle, Wi
 import { collection, query, orderBy, getDocs, deleteDoc, doc } from 'firebase/firestore';
 import { db, withOnlineCheck } from '../lib/firebase';
 import { useNavigate } from 'react-router-dom';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 interface HistoryRecord {
   id: string;
@@ -142,6 +143,10 @@ export const Favorites: React.FC = () => {
     });
   };
 
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -252,11 +257,7 @@ export const Favorites: React.FC = () => {
         </div>
       )}
       
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-300"></div>
-        </div>
-      ) : history.length > 0 ? (
+      {history.length > 0 ? (
         <div className="space-y-6">
           {history.map(record => (
             <div 
