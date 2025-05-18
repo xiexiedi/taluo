@@ -81,6 +81,23 @@ export const DailyFortune: React.FC = () => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [fortune, setFortune] = useState<DailyFortuneState | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    checkAuth();
+  }, []);
+
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    setIsAuthenticated(!!session);
+    if (session) {
+      loadFortune().then(hasExisting => {
+        if (!hasExisting) {
+          drawCard();
+        }
+      });
+    }
+  };
 
   const getCurrentDate = () => {
     const date = new Date();
@@ -89,22 +106,22 @@ export const DailyFortune: React.FC = () => {
 
   const loadFortune = async () => {
     try {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) {
-        throw new Error('请先登录');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setIsAuthenticated(false);
+        return false;
       }
 
       const { data: existingFortune, error: fetchError } = await supabase
         .from('readings')
         .select('*')
-        .eq('user_id', user.user.id)
+        .eq('user_id', session.user.id)
         .eq('type', 'daily')
         .eq('created_at::date', new Date().toISOString().split('T')[0])
         .single();
 
       if (fetchError) {
         if (fetchError.code === 'PGRST116') {
-          // No fortune exists for today, create new one
           return false;
         }
         throw fetchError;
@@ -130,15 +147,16 @@ export const DailyFortune: React.FC = () => {
 
   const saveFortune = async (data: DailyFortuneState) => {
     try {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) {
-        throw new Error('请先登录');
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setIsAuthenticated(false);
+        return;
       }
 
       const { error: insertError } = await supabase
         .from('readings')
         .insert({
-          user_id: user.user.id,
+          user_id: session.user.id,
           type: 'daily',
           spread_type: 'daily',
           cards: [{
@@ -189,13 +207,23 @@ export const DailyFortune: React.FC = () => {
     }, 1500);
   };
 
-  useEffect(() => {
-    loadFortune().then(hasExisting => {
-      if (!hasExisting) {
-        drawCard();
-      }
-    });
-  }, []);
+  if (isAuthenticated === null) {
+    return <LoadingSpinner />;
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className="bg-purple-900/20 backdrop-blur-sm rounded-xl p-6 border border-purple-700/30 text-center">
+        <p className="text-purple-200 mb-4">请先登录以查看今日运势</p>
+        <button
+          onClick={checkAuth}
+          className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors"
+        >
+          重试
+        </button>
+      </div>
+    );
+  }
 
   if (error) {
     return (
