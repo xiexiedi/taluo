@@ -1,45 +1,35 @@
 import React from 'react';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Layout } from './components/Layout';
 import { Home } from './pages/Home';
 import { Favorites } from './pages/Favorites';
 import { DrawCards } from './pages/DrawCards';
 import { Journal } from './pages/Journal';
 import { Profile } from './pages/Profile';
+import { ReadingDetail } from './pages/ReadingDetail';
 
 function AppContent() {
   const [currentPage, setCurrentPage] = React.useState('home');
 
-  // Render the current page based on navigation
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'home':
-        return <Home />;
-      case 'favorites':
-        return <Favorites />;
-      case 'draw':
-        return <DrawCards />;
-      case 'journal':
-        return <Journal />;
-      case 'profile':
-        return <Profile />;
-      default:
-        return <Home />;
-    }
-  };
-
   return (
     <Layout currentPage={currentPage} onNavigate={setCurrentPage}>
-      {renderPage()}
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/favorites" element={<Favorites />} />
+        <Route path="/draw" element={<DrawCards />} />
+        <Route path="/journal" element={<Journal />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/reading/:id" element={<ReadingDetail />} />
+      </Routes>
     </Layout>
   );
 }
 
 function App() {
   return (
-    <BrowserRouter>
+    <Router>
       <AppContent />
-    </BrowserRouter>
+    </Router>
   );
 }
 
