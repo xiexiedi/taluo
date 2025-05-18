@@ -399,7 +399,7 @@ export const DrawCards: React.FC = () => {
                   setSelectedSpread(spread.id);
                   drawCards(spread.count, spread.name, spread.id);
                 }}
-                className="bg-blue-800/30 backdrop-blur-sm hover:bg-blue-800/50 transition-all border border-blue-700/40 rounded-xl p-4 text-center hover:scale-105 duration-300"
+                className="bg-blue-900/20 backdrop-blur-sm hover:bg-blue-800/50 transition-all border border-blue-700/40 rounded-xl p-4 text-center hover:scale-105 duration-300"
               >
                 <h3 className="text-lg font-semibold text-white">{spread.name}</h3>
                 <p className="text-xs text-indigo-200/70 mt-1">{spread.description}</p>
@@ -407,6 +407,7 @@ export const DrawCards: React.FC = () => {
               </button>
             ))}
           </div>
+        
         </div>
       )}
       
