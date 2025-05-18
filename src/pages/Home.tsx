@@ -118,6 +118,13 @@ export const Home: React.FC = () => {
               cardCount={10} 
             />
           </div>
+          <div onClick={() => navigateToDrawCards('relationship')}>
+            <SpreadOption 
+              title="关系牌阵" 
+              description="洞察人际关系" 
+              cardCount={5} 
+            />
+          </div>
         </div>
       </section>
       

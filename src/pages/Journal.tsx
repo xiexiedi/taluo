@@ -2,12 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { BookOpen, PenLine, Search, Calendar, ArrowUpCircle, RefreshCw, AlertCircle, WifiOff } from 'lucide-react';
 import { CreateJournalEntry } from '../components/CreateJournalEntry';
 import { JournalDetailModal } from '../components/JournalDetailModal';
-import { getJournalEntries, JournalEntry } from '../lib/mockData';
+import { mockJournalEntries, JournalEntry } from '../lib/mockData';
 import { LoadingSpinner } from '../components/LoadingSpinner';
-import { useAuth } from '../lib/auth';
 
 export const Journal: React.FC = () => {
-  const { user } = useAuth();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
@@ -18,14 +16,13 @@ export const Journal: React.FC = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const fetchEntries = async () => {
-    if (!user) return;
-    
     try {
       setError(null);
       setIsRefreshing(true);
       
-      const entries = getJournalEntries(user.id);
-      setJournalEntries(entries);
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setJournalEntries(mockJournalEntries);
     } catch (err) {
       console.error('Error fetching journal entries:', err);
       setError('获取日志失败，请稍后重试');
@@ -36,10 +33,8 @@ export const Journal: React.FC = () => {
   };
 
   useEffect(() => {
-    if (user) {
-      fetchEntries();
-    }
-  }, [user]);
+    fetchEntries();
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
