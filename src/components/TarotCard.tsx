@@ -136,7 +136,7 @@ export const TarotCard: React.FC<TarotCardProps> = ({
           <div className="backface-hidden absolute w-full h-full">
             <div className="w-full h-full rounded-lg shadow-lg overflow-hidden">
               <img 
-                src="/素材库/卡牌背景.png"
+                src="/素材库/卡牌背景 copy.png"
                 alt="Card Back"
                 className="w-full h-full object-cover"
               />
