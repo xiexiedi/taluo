@@ -1,15 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, PenLine, Search, Calendar, ArrowUpCircle, RefreshCw, AlertCircle } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 import { CreateJournalEntry } from '../components/CreateJournalEntry';
-
-interface JournalEntry {
-  id: string;
-  title: string;
-  content: string;
-  level: 'INFO' | 'WARNING' | 'ERROR';
-  timestamp: string;
-}
+import { mockJournalEntries, JournalEntry } from '../lib/mockData';
 
 export const Journal: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -24,18 +16,12 @@ export const Journal: React.FC = () => {
       setError(null);
       setIsRefreshing(true);
       
-      // Test connection by attempting to fetch data
-      const { data, error: fetchError } = await supabase
-        .from('journal_entries')
-        .select('*')
-        .order('timestamp', { ascending: false });
-
-      if (fetchError) throw fetchError;
-      
-      setJournalEntries(data || []);
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setJournalEntries(mockJournalEntries);
     } catch (err) {
       console.error('Error fetching journal entries:', err);
-      setError(err instanceof Error ? err.message : 'Failed to connect to database');
+      setError('获取日志失败，请稍后重试');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -86,7 +72,7 @@ export const Journal: React.FC = () => {
       <div className="py-6">
         <div className="bg-red-900/20 backdrop-blur-sm rounded-xl p-6 border border-red-700/40 text-center">
           <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-white mb-2">连接错误</h3>
+          <h3 className="text-lg font-semibold text-white mb-2">加载失败</h3>
           <p className="text-red-200/90 mb-4">{error}</p>
           <button
             onClick={fetchEntries}
@@ -94,7 +80,7 @@ export const Journal: React.FC = () => {
             disabled={isRefreshing}
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-            {isRefreshing ? '重试中...' : '重试连接'}
+            {isRefreshing ? '重试中...' : '重试'}
           </button>
         </div>
       </div>
