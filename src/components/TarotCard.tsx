@@ -4,8 +4,6 @@ import { Maximize2, X } from 'lucide-react';
 interface TarotCardProps {
   name: string;
   isReversed?: boolean;
-  disableFlip?: boolean;
-  showFrontByDefault?: boolean;
 }
 
 const cardNameMap: Record<string, string> = {
@@ -95,11 +93,9 @@ const cardNameMap: Record<string, string> = {
 
 export const TarotCard: React.FC<TarotCardProps> = ({ 
   name, 
-  isReversed = false,
-  disableFlip = false,
-  showFrontByDefault = false
+  isReversed = false 
 }) => {
-  const [isFlipped, setIsFlipped] = useState(!showFrontByDefault);
+  const [isFlipped, setIsFlipped] = useState(false);
   const [showFullscreen, setShowFullscreen] = useState(false);
   const [imageError, setImageError] = useState(false);
 
@@ -123,7 +119,6 @@ export const TarotCard: React.FC<TarotCardProps> = ({
   };
 
   const handleFlip = (e: React.MouseEvent) => {
-    if (disableFlip) return;
     e.stopPropagation();
     setIsFlipped(!isFlipped);
   };
@@ -138,20 +133,18 @@ export const TarotCard: React.FC<TarotCardProps> = ({
           onClick={handleFlip}
         >
           {/* Card Back */}
-          {!disableFlip && (
-            <div className="backface-hidden absolute w-full h-full">
-              <div className="w-full h-full rounded-lg shadow-lg overflow-hidden">
-                <img 
-                  src="/素材库/卡牌背景.png"
-                  alt="Card Back"
-                  className="w-full h-full object-cover"
-                />
-              </div>
+          <div className="backface-hidden absolute w-full h-full">
+            <div className="w-full h-full rounded-lg shadow-lg overflow-hidden">
+              <img 
+                src="/素材库/卡牌背景.png"
+                alt="Card Back"
+                className="w-full h-full object-cover"
+              />
             </div>
-          )}
+          </div>
 
           {/* Card Front */}
-          <div className={`${!disableFlip ? 'backface-hidden absolute' : ''} w-full h-full ${!disableFlip ? 'rotate-y-180' : ''} ${isReversed ? 'rotate-180' : ''}`}>
+          <div className={`backface-hidden absolute w-full h-full rotate-y-180 ${isReversed ? 'rotate-180' : ''}`}>
             {!imageError ? (
               <div className="relative w-full h-full">
                 <img 
