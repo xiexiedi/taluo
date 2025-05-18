@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpen, PenLine, Search, Calendar, ArrowUpCircle, RefreshCw, AlertCircle } from 'lucide-react';
+import { BookOpen, PenLine, Search, Calendar, ArrowUpCircle, RefreshCw, AlertCircle, WifiOff } from 'lucide-react';
 import { CreateJournalEntry } from '../components/CreateJournalEntry';
 import { mockJournalEntries, JournalEntry } from '../lib/mockData';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 
 export const Journal: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -71,7 +72,7 @@ export const Journal: React.FC = () => {
     return (
       <div className="py-6">
         <div className="bg-red-900/20 backdrop-blur-sm rounded-xl p-6 border border-red-700/40 text-center">
-          <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+          <WifiOff className="w-12 h-12 text-red-400 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-white mb-2">加载失败</h3>
           <p className="text-red-200/90 mb-4">{error}</p>
           <button
@@ -85,6 +86,10 @@ export const Journal: React.FC = () => {
         </div>
       </div>
     );
+  }
+
+  if (isLoading) {
+    return <LoadingSpinner />;
   }
 
   return (
@@ -116,12 +121,7 @@ export const Journal: React.FC = () => {
         写新日志
       </button>
       
-      {isLoading ? (
-        <div className="text-center py-12">
-          <RefreshCw className="w-8 h-8 text-indigo-400 animate-spin mx-auto mb-4" />
-          <p className="text-indigo-200">加载中...</p>
-        </div>
-      ) : journalEntries.length > 0 ? (
+      {journalEntries.length > 0 ? (
         <div className="space-y-5">
           {journalEntries.map((entry) => (
             <div 
