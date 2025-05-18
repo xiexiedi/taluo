@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TarotCard } from './TarotCard';
-import { Sparkles, WifiOff } from 'lucide-react';
+import { WifiOff } from 'lucide-react';
 import { db, withOnlineCheck } from '../lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
@@ -52,9 +52,10 @@ const getRandomColor = () => {
 const getRandomNumber = () => Math.floor(Math.random() * 9) + 1;
 
 export const DailyFortune: React.FC = () => {
-  const [isDrawing, setIsDrawing] = useState(false);
   const [fortune, setFortune] = useState<DailyFortuneState | null>(null);
+  const [isDrawing, setIsDrawing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasDrawn, setHasDrawn] = useState(false);
 
   const getCurrentDate = () => {
     const date = new Date();
@@ -69,7 +70,9 @@ export const DailyFortune: React.FC = () => {
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
-          setFortune(docSnap.data() as DailyFortuneState);
+          const data = docSnap.data() as DailyFortuneState;
+          setFortune(data);
+          setHasDrawn(true);
           return true;
         }
         return false;
@@ -113,10 +116,11 @@ export const DailyFortune: React.FC = () => {
     }
   };
 
-  const drawCard = () => {
+  const drawCard = async () => {
     setIsDrawing(true);
+    setError(null);
     
-    setTimeout(async () => {
+    try {
       const card = getRandomCard();
       const isReversed = Math.random() > 0.7;
       const template = fortuneTemplates[card] || fortuneTemplates['The Fool'];
@@ -135,16 +139,16 @@ export const DailyFortune: React.FC = () => {
       
       await saveFortune(newFortune);
       setFortune(newFortune);
+      setHasDrawn(true);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : '抽取运势时出错，请稍后重试。');
+    } finally {
       setIsDrawing(false);
-    }, 1500);
+    }
   };
 
   useEffect(() => {
-    loadFortune().then(hasExisting => {
-      if (!hasExisting && !error) {
-        drawCard();
-      }
-    });
+    loadFortune();
   }, []);
 
   if (error) {
@@ -158,7 +162,7 @@ export const DailyFortune: React.FC = () => {
               setError(null);
               loadFortune().then(hasExisting => {
                 if (!hasExisting) {
-                  drawCard();
+                  setHasDrawn(false);
                 }
               });
             }}
@@ -171,10 +175,6 @@ export const DailyFortune: React.FC = () => {
     );
   }
 
-  if (!fortune) {
-    return null;
-  }
-
   return (
     <section className="bg-gradient-to-r from-purple-900/60 to-blue-900/60 backdrop-blur-sm rounded-xl border border-purple-700/30 shadow-lg">
       <div className="p-6">
@@ -185,17 +185,18 @@ export const DailyFortune: React.FC = () => {
           </span>
         </div>
 
-        {isDrawing ? (
-          <div className="flex flex-col items-center justify-center py-8">
-            <div className="relative">
-              <Sparkles className="w-12 h-12 text-indigo-300 animate-pulse" />
-              <div className="absolute inset-0 animate-spin duration-3000">
-                <Sparkles className="w-12 h-12 text-purple-300 opacity-70" />
-              </div>
-            </div>
-            <p className="text-indigo-200 mt-4 animate-pulse">正在抽取今日运势...</p>
+        {!hasDrawn ? (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <p className="text-indigo-200 mb-6">抽取今日运势，获取塔罗指引</p>
+            <button
+              onClick={drawCard}
+              disabled={isDrawing}
+              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors disabled:opacity-50"
+            >
+              {isDrawing ? '抽取中...' : '抽取运势'}
+            </button>
           </div>
-        ) : (
+        ) : fortune && (
           <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
             <div className="md:col-span-4">
               <TarotCard 
@@ -235,14 +236,6 @@ export const DailyFortune: React.FC = () => {
                   <p className="text-indigo-200/90 text-sm">{fortune.fortune.health}</p>
                 </div>
               </div>
-              
-              <button 
-                onClick={drawCard}
-                disabled={isDrawing}
-                className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-lg transition-colors"
-              >
-                重新抽牌
-              </button>
             </div>
           </div>
         )}
