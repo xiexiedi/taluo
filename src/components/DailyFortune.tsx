@@ -3,6 +3,7 @@ import { TarotCard } from './TarotCard';
 import { LoadingSpinner } from './LoadingSpinner';
 import { useAuth } from '../lib/auth';
 import { saveReading, getReadings } from '../lib/readings';
+import { FortuneModal } from './FortuneModal';
 
 interface DailyFortuneState {
   card: string | null;
@@ -56,6 +57,7 @@ export const DailyFortune: React.FC = () => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [fortune, setFortune] = useState<DailyFortuneState | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -189,65 +191,79 @@ export const DailyFortune: React.FC = () => {
   }
 
   return (
-    <section className="bg-gradient-to-r from-purple-900/60 to-blue-900/60 backdrop-blur-sm rounded-xl border border-purple-700/30 shadow-lg">
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-white">今日运势</h3>
-          <span className="text-xs bg-purple-800/50 text-purple-200 py-1 px-3 rounded-full">
-            {new Date().toLocaleDateString('zh-CN')}
-          </span>
-        </div>
+    <>
+      <section 
+        className="bg-gradient-to-r from-purple-900/60 to-blue-900/60 backdrop-blur-sm rounded-xl border border-purple-700/30 shadow-lg cursor-pointer hover:border-purple-600/50 transition-colors"
+        onClick={() => setShowModal(true)}
+      >
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-white">今日运势</h3>
+            <span className="text-xs bg-purple-800/50 text-purple-200 py-1 px-3 rounded-full">
+              {new Date().toLocaleDateString('zh-CN')}
+            </span>
+          </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-          <div className="md:col-span-4">
-            <TarotCard 
-              name={fortune.card} 
-              isReversed={fortune.isReversed} 
-            />
-          </div>
-          
-          <div className="md:col-span-8 space-y-6">
-            <div>
-              <h4 className="text-lg font-medium text-white mb-2">总体运势</h4>
-              <p className="text-indigo-200/90">{fortune.fortune.general}</p>
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+            <div className="md:col-span-4">
+              <TarotCard 
+                name={fortune.card} 
+                isReversed={fortune.isReversed} 
+              />
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-blue-900/20 rounded-lg p-3">
-                <span className="text-indigo-300 text-sm block mb-1">幸运色彩</span>
-                <span className="text-white text-lg">{fortune.fortune.luckyColor}</span>
+            <div className="md:col-span-8 space-y-6">
+              <div>
+                <h4 className="text-lg font-medium text-white mb-2">总体运势</h4>
+                <p className="text-indigo-200/90">{fortune.fortune.general}</p>
               </div>
-              <div className="bg-blue-900/20 rounded-lg p-3">
-                <span className="text-indigo-300 text-sm block mb-1">幸运数字</span>
-                <span className="text-white text-lg">{fortune.fortune.luckyNumber}</span>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-blue-900/20 rounded-lg p-3">
+                  <span className="text-indigo-300 text-sm block mb-1">幸运色彩</span>
+                  <span className="text-white text-lg">{fortune.fortune.luckyColor}</span>
+                </div>
+                <div className="bg-blue-900/20 rounded-lg p-3">
+                  <span className="text-indigo-300 text-sm block mb-1">幸运数字</span>
+                  <span className="text-white text-lg">{fortune.fortune.luckyNumber}</span>
+                </div>
               </div>
+              
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-blue-900/20 rounded-lg p-3">
+                  <h5 className="text-indigo-300 text-sm mb-1">爱情运</h5>
+                  <p className="text-indigo-200/90 text-sm">{fortune.fortune.love}</p>
+                </div>
+                <div className="bg-blue-900/20 rounded-lg p-3">
+                  <h5 className="text-indigo-300 text-sm mb-1">事业运</h5>
+                  <p className="text-indigo-200/90 text-sm">{fortune.fortune.career}</p>
+                </div>
+                <div className="bg-blue-900/20 rounded-lg p-3">
+                  <h5 className="text-indigo-300 text-sm mb-1">健康运</h5>
+                  <p className="text-indigo-200/90 text-sm">{fortune.fortune.health}</p>
+                </div>
+              </div>
+              
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  drawCard();
+                }}
+                disabled={isDrawing}
+                className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-lg transition-colors"
+              >
+                重新抽牌
+              </button>
             </div>
-            
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-blue-900/20 rounded-lg p-3">
-                <h5 className="text-indigo-300 text-sm mb-1">爱情运</h5>
-                <p className="text-indigo-200/90 text-sm">{fortune.fortune.love}</p>
-              </div>
-              <div className="bg-blue-900/20 rounded-lg p-3">
-                <h5 className="text-indigo-300 text-sm mb-1">事业运</h5>
-                <p className="text-indigo-200/90 text-sm">{fortune.fortune.career}</p>
-              </div>
-              <div className="bg-blue-900/20 rounded-lg p-3">
-                <h5 className="text-indigo-300 text-sm mb-1">健康运</h5>
-                <p className="text-indigo-200/90 text-sm">{fortune.fortune.health}</p>
-              </div>
-            </div>
-            
-            <button 
-              onClick={drawCard}
-              disabled={isDrawing}
-              className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-lg transition-colors"
-            >
-              重新抽牌
-            </button>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+
+      <FortuneModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        fortune={fortune}
+      />
+    </>
   );
 };
