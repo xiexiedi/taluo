@@ -182,7 +182,7 @@ export const Favorites: React.FC = () => {
           {readings.map(reading => (
             <div 
               key={reading.id}
-              className={`bg-blue-800/30 backdrop-blur-sm rounded-xl border ${
+              className={`bg-blue-900/20 backdrop-blur-sm rounded-xl border ${
                 isEditMode ? 'border-blue-700/40' : selectedItems.has(reading.id) ? 'border-indigo-500' : 'border-blue-700/40'
               } shadow-lg transition-all duration-300 overflow-hidden`}
             >
@@ -205,7 +205,7 @@ export const Favorites: React.FC = () => {
                     )}
                     
                     <div>
-                      <h3 className="text-lg font-semibold text-white">{reading.spread_type}</h3>
+                      <h3 className="text-lg font-semibold text-white tracking-wide">{reading.spread_type}</h3>
                       <div className="flex items-center space-x-4 mt-2">
                         <div className="flex items-center text-sm text-indigo-200/70">
                           <CalendarDays className="w-4 h-4 mr-1" />
