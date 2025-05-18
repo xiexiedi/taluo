@@ -19,3 +19,42 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: true
   }
 });
+
+// Utility function to check online status
+export const isOnline = () => {
+  return typeof navigator !== 'undefined' && navigator.onLine;
+};
+
+// Wrapper for Supabase operations that checks online status
+export const withOnlineCheck = async <T>(operation: () => Promise<T>): Promise<T> => {
+  if (!isOnline()) {
+    throw new Error('您当前处于离线状态，请检查网络连接后重试。');
+  }
+  return operation();
+};
+
+// Function to clear all reading records
+export const clearAllReadings = async () => {
+  try {
+    return await withOnlineCheck(async () => {
+      const { error: fortunesError } = await supabase
+        .from('readings')
+        .delete()
+        .eq('type', 'daily');
+
+      const { error: readingsError } = await supabase
+        .from('readings')
+        .delete()
+        .eq('type', 'reading');
+
+      if (fortunesError || readingsError) {
+        throw new Error('清除记录时出错');
+      }
+
+      return true;
+    });
+  } catch (error) {
+    console.error('Error clearing readings:', error);
+    return false;
+  }
+};
