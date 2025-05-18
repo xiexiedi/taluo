@@ -10,12 +10,6 @@ export default defineConfig({
   // Configure static asset handling
   publicDir: 'public',
   assetsInclude: ['**/*.png'],
-  // Add alias for tarot card images
-  resolve: {
-    alias: {
-      '@tarot': '/home/project/塔罗牌库'
-    }
-  },
   server: {
     watch: {
       usePolling: true,

@@ -105,7 +105,7 @@ export const TarotCard: React.FC<TarotCardProps> = ({
       console.error(`No Chinese name mapping found for card: ${cardName}`);
       return '';
     }
-    return `/@tarot/${chineseName}.png`;
+    return `/塔罗牌库/${chineseName}.png`;
   };
 
   const handleImageError = () => {
