@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { TarotCard } from '../components/TarotCard';
 import { CalendarDays, Search, Clock } from 'lucide-react';
 import { collection, query, orderBy, getDocs } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { db, clearAllReadings } from '../lib/firebase';
 import { useNavigate } from 'react-router-dom';
 
 interface HistoryRecord {
@@ -28,67 +28,82 @@ interface HistoryRecord {
 export const Favorites: React.FC = () => {
   const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [clearing, setClearing] = useState(false);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchHistory = async () => {
-      try {
-        const fortunesQuery = query(
-          collection(db, 'fortunes'),
-          orderBy('date', 'desc')
-        );
-        const readingsQuery = query(
-          collection(db, 'readings'),
-          orderBy('date', 'desc')
-        );
+  const fetchHistory = async () => {
+    try {
+      const fortunesQuery = query(
+        collection(db, 'fortunes'),
+        orderBy('date', 'desc')
+      );
+      const readingsQuery = query(
+        collection(db, 'readings'),
+        orderBy('date', 'desc')
+      );
 
-        const [fortunesSnap, readingsSnap] = await Promise.all([
-          getDocs(fortunesQuery),
-          getDocs(readingsQuery)
-        ]);
+      const [fortunesSnap, readingsSnap] = await Promise.all([
+        getDocs(fortunesQuery),
+        getDocs(readingsQuery)
+      ]);
 
-        const fortunes = fortunesSnap.docs.map(doc => ({
+      const fortunes = fortunesSnap.docs.map(doc => ({
+        id: doc.id,
+        type: 'daily' as const,
+        date: doc.data().date,
+        spreadName: '今日运势',
+        spreadId: 'daily',
+        cards: [{
+          name: doc.data().card,
+          isReversed: doc.data().isReversed
+        }],
+        interpretation: {
+          general: doc.data().fortune.general
+        }
+      }));
+
+      const readings = readingsSnap.docs.map(doc => {
+        const data = doc.data();
+        return {
           id: doc.id,
-          type: 'daily' as const,
-          date: doc.data().date,
-          spreadName: '今日运势',
-          spreadId: 'daily',
-          cards: [{
-            name: doc.data().card,
-            isReversed: doc.data().isReversed
-          }],
-          interpretation: {
-            general: doc.data().fortune.general
-          }
-        }));
+          type: 'reading' as const,
+          date: data.date,
+          spreadName: data.spreadName,
+          spreadId: data.spreadId,
+          cards: data.cards,
+          interpretation: data.interpretation
+        };
+      });
 
-        const readings = readingsSnap.docs.map(doc => {
-          const data = doc.data();
-          return {
-            id: doc.id,
-            type: 'reading' as const,
-            date: data.date,
-            spreadName: data.spreadName,
-            spreadId: data.spreadId,
-            cards: data.cards,
-            interpretation: data.interpretation
-          };
-        });
+      const combined = [...fortunes, ...readings].sort((a, b) => 
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
 
-        const combined = [...fortunes, ...readings].sort((a, b) => 
-          new Date(b.date).getTime() - new Date(a.date).getTime()
-        );
+      setHistory(combined);
+    } catch (error) {
+      console.error('Error fetching history:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        setHistory(combined);
-      } catch (error) {
-        console.error('Error fetching history:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
+  useEffect(() => {
     fetchHistory();
   }, []);
+
+  const handleClearHistory = async () => {
+    if (window.confirm('确定要清除所有历史记录吗？此操作不可撤销。')) {
+      setClearing(true);
+      try {
+        await clearAllReadings();
+        setHistory([]);
+      } catch (error) {
+        console.error('Error clearing history:', error);
+      } finally {
+        setClearing(false);
+      }
+    }
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -202,6 +217,13 @@ export const Favorites: React.FC = () => {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-white">历史记录</h2>
         <div className="flex space-x-3">
+          <button 
+            onClick={handleClearHistory}
+            disabled={clearing || loading || history.length === 0}
+            className="px-4 py-2 bg-red-600/80 text-white rounded-lg hover:bg-red-700/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {clearing ? '清除中...' : '清除历史'}
+          </button>
           <button className="p-2 rounded-full bg-blue-800/50 text-indigo-200">
             <Search className="w-5 h-5" />
           </button>
