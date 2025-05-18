@@ -100,7 +100,11 @@ export const TarotCard: React.FC<TarotCardProps> = ({
   const [imageError, setImageError] = useState(false);
 
   const getCardImageUrl = (cardName: string): string => {
-    const chineseName = cardNameMap[cardName] || cardName;
+    const chineseName = cardNameMap[cardName];
+    if (!chineseName) {
+      console.error(`No Chinese name mapping found for card: ${cardName}`);
+      return '';
+    }
     return `/taluo tupian/${chineseName}.png`;
   };
 
