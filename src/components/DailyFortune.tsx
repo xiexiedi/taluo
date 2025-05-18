@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { TarotCard } from './TarotCard';
-import { Sparkles } from 'lucide-react';
-import { db } from '../lib/firebase';
+import { Sparkles, WifiOff } from 'lucide-react';
+import { db, withOnlineCheck } from '../lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 interface DailyFortuneState {
@@ -54,6 +54,7 @@ const getRandomNumber = () => Math.floor(Math.random() * 9) + 1;
 export const DailyFortune: React.FC = () => {
   const [isDrawing, setIsDrawing] = useState(false);
   const [fortune, setFortune] = useState<DailyFortuneState | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const getCurrentDate = () => {
     const date = new Date();
@@ -61,43 +62,55 @@ export const DailyFortune: React.FC = () => {
   };
 
   const loadFortune = async () => {
-    const currentDate = getCurrentDate();
-    const docRef = doc(db, 'fortunes', currentDate);
-    const docSnap = await getDoc(docRef);
+    try {
+      return await withOnlineCheck(async () => {
+        const currentDate = getCurrentDate();
+        const docRef = doc(db, 'fortunes', currentDate);
+        const docSnap = await getDoc(docRef);
 
-    if (docSnap.exists()) {
-      setFortune(docSnap.data() as DailyFortuneState);
-      return true;
+        if (docSnap.exists()) {
+          setFortune(docSnap.data() as DailyFortuneState);
+          return true;
+        }
+        return false;
+      });
+    } catch (error) {
+      setError(error instanceof Error ? error.message : '加载运势时出错，请稍后重试。');
+      return false;
     }
-    return false;
   };
 
   const saveFortune = async (data: DailyFortuneState) => {
-    const docRef = doc(db, 'fortunes', data.date);
-    const timestamp = new Date().toISOString();
-    
-    // Format the data to match the history record structure
-    const fortuneRecord = {
-      ...data,
-      timestamp,
-      type: 'daily',
-      spreadName: '今日运势',
-      spreadId: 'daily',
-      cards: [{
-        name: data.card,
-        isReversed: data.isReversed,
-        position: '今日运势'
-      }],
-      interpretation: {
-        general: data.fortune.general,
-        cards: [{
-          position: '今日运势',
-          meaning: data.fortune.general
-        }]
-      }
-    };
+    try {
+      await withOnlineCheck(async () => {
+        const docRef = doc(db, 'fortunes', data.date);
+        const timestamp = new Date().toISOString();
+        
+        const fortuneRecord = {
+          ...data,
+          timestamp,
+          type: 'daily',
+          spreadName: '今日运势',
+          spreadId: 'daily',
+          cards: [{
+            name: data.card,
+            isReversed: data.isReversed,
+            position: '今日运势'
+          }],
+          interpretation: {
+            general: data.fortune.general,
+            cards: [{
+              position: '今日运势',
+              meaning: data.fortune.general
+            }]
+          }
+        };
 
-    await setDoc(docRef, fortuneRecord);
+        await setDoc(docRef, fortuneRecord);
+      });
+    } catch (error) {
+      setError(error instanceof Error ? error.message : '保存运势时出错，请稍后重试。');
+    }
   };
 
   const drawCard = () => {
@@ -128,11 +141,35 @@ export const DailyFortune: React.FC = () => {
 
   useEffect(() => {
     loadFortune().then(hasExisting => {
-      if (!hasExisting) {
+      if (!hasExisting && !error) {
         drawCard();
       }
     });
   }, []);
+
+  if (error) {
+    return (
+      <div className="bg-gradient-to-r from-purple-900/60 to-blue-900/60 backdrop-blur-sm rounded-xl border border-purple-700/30 shadow-lg p-6">
+        <div className="flex flex-col items-center justify-center py-8 text-center">
+          <WifiOff className="w-12 h-12 text-indigo-300 mb-4" />
+          <p className="text-indigo-200 mb-2">{error}</p>
+          <button
+            onClick={() => {
+              setError(null);
+              loadFortune().then(hasExisting => {
+                if (!hasExisting) {
+                  drawCard();
+                }
+              });
+            }}
+            className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
+          >
+            重试
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (!fortune) {
     return null;
