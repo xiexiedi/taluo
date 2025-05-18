@@ -48,3 +48,4 @@ export const StatisticsDisplay: React.FC = () => {
       </div>
     </div>
   );
+}
