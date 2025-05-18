@@ -8,7 +8,7 @@ import { LoadingSpinner } from '../components/LoadingSpinner';
 interface HistoryRecord {
   id: string;
   type: 'daily' | 'reading';
-  timestamp: string;
+  created_at: string;
   spreadName: string;
   spreadId: string;
   cards: Array<{
@@ -43,7 +43,7 @@ export const Favorites: React.FC = () => {
         const { data: readings, error } = await supabase
           .from('readings')
           .select('*')
-          .order('timestamp', { ascending: false });
+          .order('created_at', { ascending: false });
 
         if (error) throw error;
 
@@ -269,11 +269,11 @@ export const Favorites: React.FC = () => {
                         <div className="flex items-center space-x-4 mt-2">
                           <div className="flex items-center text-sm text-indigo-200/70">
                             <CalendarDays className="w-4 h-4 mr-1" />
-                            {formatDate(record.timestamp)}
+                            {formatDate(record.created_at)}
                           </div>
                           <div className="flex items-center text-sm text-indigo-200/70">
                             <Clock className="w-4 h-4 mr-1" />
-                            {formatTime(record.timestamp)}
+                            {formatTime(record.created_at)}
                           </div>
                         </div>
                       </div>
