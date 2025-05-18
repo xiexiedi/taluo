@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, CalendarDays, Clock, AlertCircle, AlertTriangle, Info } from 'lucide-react';
-import type { JournalEntry } from '../lib/mockData';
+import type { JournalEntry } from '../lib/journal';
 
 interface JournalDetailModalProps {
   entry: JournalEntry;
