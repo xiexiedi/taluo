@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { TarotCard } from '../components/TarotCard';
-import { CalendarDays, ChevronRight, Search, ChevronDown } from 'lucide-react';
+import { CalendarDays, Search, Clock } from 'lucide-react';
 import { collection, query, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { useNavigate } from 'react-router-dom';
 
 interface HistoryRecord {
   id: string;
@@ -27,7 +28,7 @@ interface HistoryRecord {
 export const Favorites: React.FC = () => {
   const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [expandedRecords, setExpandedRecords] = useState<Set<string>>(new Set());
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -89,60 +90,60 @@ export const Favorites: React.FC = () => {
     fetchHistory();
   }, []);
 
-  const toggleRecord = (recordId: string) => {
-    setExpandedRecords(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(recordId)) {
-        newSet.delete(recordId);
-      } else {
-        newSet.add(recordId);
-      }
-      return newSet;
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('zh-CN', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
     });
   };
 
-  const getSpreadTitle = (record: HistoryRecord) => {
-    if (record.type === 'daily') {
-      return '今日运势';
-    }
-    return record.spreadName || '塔罗牌阵';
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('zh-CN', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
-  const renderExpandedContent = (record: HistoryRecord) => {
-    if (record.type === 'daily') {
-      return (
-        <div className="mt-4 space-y-4">
-          <div className="flex justify-center">
-            <div className="w-48">
-              <TarotCard 
-                name={record.cards[0].name} 
-                isReversed={record.cards[0].isReversed} 
-              />
+  const renderReadingRecord = (record: HistoryRecord) => {
+    return (
+      <div 
+        key={record.id}
+        onClick={() => navigate(`/reading/${record.id}`)}
+        className="bg-blue-800/30 backdrop-blur-sm rounded-xl p-6 border border-blue-700/40 shadow-lg hover:bg-blue-800/40 transition-all duration-300 cursor-pointer"
+      >
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <h3 className="text-lg font-semibold text-white">{record.spreadName}</h3>
+            <div className="flex items-center space-x-4 mt-2">
+              <div className="flex items-center text-sm text-indigo-200/70">
+                <CalendarDays className="w-4 h-4 mr-1" />
+                {formatDate(record.date)}
+              </div>
+              <div className="flex items-center text-sm text-indigo-200/70">
+                <Clock className="w-4 h-4 mr-1" />
+                {formatTime(record.date)}
+              </div>
             </div>
           </div>
-          <div className="bg-blue-900/20 rounded-lg p-4">
-            <h4 className="text-white font-medium mb-2">整体解读</h4>
-            <p className="text-indigo-200/90">{record.interpretation.general}</p>
+          <div className="text-xs bg-blue-700/50 text-blue-200 py-1 px-2 rounded-full">
+            {record.type === 'daily' ? '每日运势' : record.spreadName}
           </div>
         </div>
-      );
-    }
 
-    return (
-      <div className="mt-4 space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6">
           {record.cards.map((card, index) => (
-            <div key={index} className="flex flex-col items-center space-y-2">
-              <div className="w-40">
-                <TarotCard 
-                  name={card.name} 
-                  isReversed={card.isReversed} 
-                />
-              </div>
+            <div key={index} className="aspect-[2/3] relative">
+              <TarotCard 
+                name={card.name} 
+                isReversed={card.isReversed} 
+              />
               {card.position && (
-                <p className="text-sm text-indigo-200/90 text-center">
-                  {card.position}
-                </p>
+                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2">
+                  <p className="text-xs text-white text-center">{card.position}</p>
+                </div>
               )}
             </div>
           ))}
@@ -154,7 +155,7 @@ export const Favorites: React.FC = () => {
             <p className="text-indigo-200/90">{record.interpretation.general}</p>
           </div>
 
-          {record.interpretation.cards && (
+          {record.interpretation.cards && record.interpretation.cards.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {record.interpretation.cards.map((interpretation, index) => (
                 <div key={index} className="bg-blue-900/20 rounded-lg p-4">
@@ -177,54 +178,20 @@ export const Favorites: React.FC = () => {
     <div className="py-6 space-y-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-white">历史记录</h2>
-        <button className="p-2 rounded-full bg-blue-800/50 text-indigo-200">
-          <Search className="w-5 h-5" />
-        </button>
+        <div className="flex space-x-3">
+          <button className="p-2 rounded-full bg-blue-800/50 text-indigo-200">
+            <Search className="w-5 h-5" />
+          </button>
+        </div>
       </div>
       
-      {history.length > 0 ? (
-        <div className="space-y-4">
-          {history.map((record) => (
-            <div 
-              key={record.id}
-              className="bg-blue-800/30 backdrop-blur-sm rounded-xl p-5 border border-blue-700/40 shadow-lg transition-all duration-300"
-            >
-              <button 
-                onClick={() => toggleRecord(record.id)}
-                className="w-full text-left"
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-semibold text-white">{getSpreadTitle(record)}</h3>
-                    <div className="flex items-center text-xs text-indigo-200/70 mt-1">
-                      <CalendarDays className="w-3 h-3 mr-1" />
-                      {new Date(record.date).toLocaleDateString('zh-CN')}
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <div className="text-xs bg-blue-700/50 text-blue-200 py-1 px-2 rounded-full">
-                      {record.type === 'daily' ? '每日运势' : record.spreadName}
-                    </div>
-                    <ChevronDown 
-                      className={`w-5 h-5 text-indigo-200 transition-transform duration-300 ${
-                        expandedRecords.has(record.id) ? 'rotate-180' : ''
-                      }`}
-                    />
-                  </div>
-                </div>
-              </button>
-              
-              <div 
-                className={`overflow-hidden transition-all duration-300 ${
-                  expandedRecords.has(record.id) 
-                    ? 'max-h-[2000px] opacity-100' 
-                    : 'max-h-0 opacity-0'
-                }`}
-              >
-                {renderExpandedContent(record)}
-              </div>
-            </div>
-          ))}
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-300"></div>
+        </div>
+      ) : history.length > 0 ? (
+        <div className="space-y-6">
+          {history.map(record => renderReadingRecord(record))}
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-12 text-center">
