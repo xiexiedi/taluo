@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { TarotCard } from '../components/TarotCard';
-import { CalendarDays, Search, Clock } from 'lucide-react';
+import { CalendarDays, Search, Clock, Trash2, AlertTriangle, X } from 'lucide-react';
 import { collection, query, orderBy, getDocs } from 'firebase/firestore';
 import { db, clearAllReadings } from '../lib/firebase';
 import { useNavigate } from 'react-router-dom';
@@ -29,6 +29,8 @@ export const Favorites: React.FC = () => {
   const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [clearing, setClearing] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
   const navigate = useNavigate();
 
   const fetchHistory = async () => {
@@ -92,16 +94,34 @@ export const Favorites: React.FC = () => {
   }, []);
 
   const handleClearHistory = async () => {
-    if (window.confirm('确定要清除所有历史记录吗？此操作不可撤销。')) {
-      setClearing(true);
-      try {
-        await clearAllReadings();
-        setHistory([]);
-      } catch (error) {
-        console.error('Error clearing history:', error);
-      } finally {
-        setClearing(false);
-      }
+    setClearing(true);
+    try {
+      await clearAllReadings();
+      setHistory([]);
+      setSelectedItems(new Set());
+      setShowClearConfirm(false);
+    } catch (error) {
+      console.error('Error clearing history:', error);
+    } finally {
+      setClearing(false);
+    }
+  };
+
+  const toggleItemSelection = (id: string) => {
+    const newSelection = new Set(selectedItems);
+    if (newSelection.has(id)) {
+      newSelection.delete(id);
+    } else {
+      newSelection.add(id);
+    }
+    setSelectedItems(newSelection);
+  };
+
+  const selectAll = () => {
+    if (selectedItems.size === history.length) {
+      setSelectedItems(new Set());
+    } else {
+      setSelectedItems(new Set(history.map(item => item.id)));
     }
   };
 
@@ -216,19 +236,78 @@ export const Favorites: React.FC = () => {
     <div className="py-6 space-y-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-white">历史记录</h2>
-        <div className="flex space-x-3">
-          <button 
-            onClick={handleClearHistory}
-            disabled={clearing || loading || history.length === 0}
-            className="px-4 py-2 bg-red-600/80 text-white rounded-lg hover:bg-red-700/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {clearing ? '清除中...' : '清除历史'}
-          </button>
-          <button className="p-2 rounded-full bg-blue-800/50 text-indigo-200">
+        <div className="flex items-center space-x-3">
+          {history.length > 0 && (
+            <>
+              <button
+                onClick={selectAll}
+                className="px-4 py-2 bg-blue-800/50 text-indigo-200 rounded-lg hover:bg-blue-800/70 transition-colors"
+              >
+                {selectedItems.size === history.length ? '取消全选' : '全选'}
+              </button>
+              <button
+                onClick={() => setShowClearConfirm(true)}
+                disabled={clearing || loading}
+                className="px-4 py-2 bg-red-600/80 text-white rounded-lg hover:bg-red-700/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                {clearing ? '清除中...' : '清除历史'}
+              </button>
+            </>
+          )}
+          <button className="p-2 rounded-full bg-blue-800/50 text-indigo-200 hover:bg-blue-800/70 transition-colors">
             <Search className="w-5 h-5" />
           </button>
         </div>
       </div>
+
+      {/* Clear Confirmation Modal */}
+      {showClearConfirm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-blue-900/90 rounded-xl border border-blue-700/50 p-6 max-w-md w-full">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                <AlertTriangle className="w-6 h-6 text-red-400 mr-2" />
+                <h3 className="text-xl font-semibold text-white">确认清除</h3>
+              </div>
+              <button
+                onClick={() => setShowClearConfirm(false)}
+                className="p-1 hover:bg-blue-800/50 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5 text-indigo-200" />
+              </button>
+            </div>
+            <p className="text-indigo-200 mb-6">
+              确定要清除所有历史记录吗？此操作不可撤销。
+            </p>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setShowClearConfirm(false)}
+                className="px-4 py-2 bg-blue-800/50 text-indigo-200 rounded-lg hover:bg-blue-800/70 transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleClearHistory}
+                disabled={clearing}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center"
+              >
+                {clearing ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                    清除中...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    确认清除
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {loading ? (
         <div className="flex items-center justify-center py-12">
