@@ -45,13 +45,20 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({
           timestamp: new Date().toISOString()
         });
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('Insert error:', insertError);
+        throw new Error(insertError.message);
+      }
 
       onSuccess();
       onClose();
     } catch (err) {
       console.error('Error saving journal entry:', err);
-      setError('保存日志时发生错误，请稍后重试');
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('保存日志时发生错误，请稍后重试');
+      }
     } finally {
       setIsSubmitting(false);
     }
