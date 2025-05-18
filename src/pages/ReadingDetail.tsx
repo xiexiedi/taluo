@@ -9,7 +9,7 @@ import { LoadingSpinner } from '../components/LoadingSpinner';
 interface ReadingDetail {
   id: string;
   type: 'daily' | 'reading';
-  date: string;
+  timestamp: string;
   spreadName: string;
   spreadId: string;
   question?: string;
@@ -128,11 +128,11 @@ export const ReadingDetail: React.FC = () => {
       <div className="flex items-center space-x-6">
         <div className="flex items-center text-indigo-200/70">
           <CalendarDays className="w-5 h-5 mr-2" />
-          {formatDate(reading.date)}
+          {formatDate(reading.timestamp)}
         </div>
         <div className="flex items-center text-indigo-200/70">
           <Clock className="w-5 h-5 mr-2" />
-          {formatTime(reading.date)}
+          {formatTime(reading.timestamp)}
         </div>
       </div>
 

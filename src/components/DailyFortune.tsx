@@ -6,7 +6,6 @@ import { supabase, withOnlineCheck } from '../lib/supabase';
 interface DailyFortuneState {
   card: string | null;
   isReversed: boolean;
-  date: string;
   fortune: {
     general: string;
     love: string;
@@ -56,19 +55,27 @@ export const DailyFortune: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [hasDrawn, setHasDrawn] = useState(false);
 
-  const getCurrentDate = () => {
-    const date = new Date();
-    return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`;
+  const getCurrentDateRange = () => {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfDay = new Date(startOfDay);
+    endOfDay.setDate(endOfDay.getDate() + 1);
+    
+    return {
+      start: startOfDay.toISOString(),
+      end: endOfDay.toISOString()
+    };
   };
 
   const loadFortune = async () => {
     try {
       return await withOnlineCheck(async () => {
-        const currentDate = getCurrentDate();
+        const dateRange = getCurrentDateRange();
         const { data, error } = await supabase
           .from('readings')
           .select('*')
-          .eq('date', currentDate)
+          .gte('timestamp', dateRange.start)
+          .lt('timestamp', dateRange.end)
           .eq('type', 'daily')
           .single();
 
@@ -141,7 +148,6 @@ export const DailyFortune: React.FC = () => {
       const newFortune: DailyFortuneState = {
         card,
         isReversed,
-        date: getCurrentDate(),
         fortune: {
           ...interpretation,
           luckyColor: getRandomColor(),

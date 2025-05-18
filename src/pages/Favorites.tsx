@@ -8,7 +8,7 @@ import { LoadingSpinner } from '../components/LoadingSpinner';
 interface HistoryRecord {
   id: string;
   type: 'daily' | 'reading';
-  date: string;
+  timestamp: string;
   spreadName: string;
   spreadId: string;
   cards: Array<{
@@ -23,7 +23,6 @@ interface HistoryRecord {
       meaning: string;
     }>;
   };
-  timestamp: string;
 }
 
 export const Favorites: React.FC = () => {
