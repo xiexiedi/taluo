@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { TarotCard } from './TarotCard';
-import { Sparkles } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { LoadingSpinner } from './LoadingSpinner';
 
 interface DailyFortuneState {
   card: string | null;
@@ -218,13 +218,12 @@ export const DailyFortune: React.FC = () => {
     );
   }
 
+  if (isDrawing) {
+    return <LoadingSpinner />;
+  }
+
   if (!fortune) {
-    return (
-      <div className="bg-blue-900/20 backdrop-blur-sm rounded-xl p-6 border border-blue-700/30 text-center">
-        <Sparkles className="w-8 h-8 text-indigo-300 mx-auto mb-4 animate-pulse" />
-        <p className="text-indigo-200">正在加载今日运势...</p>
-      </div>
-    );
+    return <LoadingSpinner />;
   }
 
   return (
@@ -237,67 +236,55 @@ export const DailyFortune: React.FC = () => {
           </span>
         </div>
 
-        {isDrawing ? (
-          <div className="flex flex-col items-center justify-center py-8">
-            <div className="relative">
-              <Sparkles className="w-12 h-12 text-indigo-300 animate-pulse" />
-              <div className="absolute inset-0 animate-spin duration-3000">
-                <Sparkles className="w-12 h-12 text-purple-300 opacity-70" />
-              </div>
-            </div>
-            <p className="text-indigo-200 mt-4 animate-pulse">正在抽取今日运势...</p>
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+          <div className="md:col-span-4">
+            <TarotCard 
+              name={fortune.card} 
+              isReversed={fortune.isReversed} 
+            />
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-            <div className="md:col-span-4">
-              <TarotCard 
-                name={fortune.card} 
-                isReversed={fortune.isReversed} 
-              />
+          
+          <div className="md:col-span-8 space-y-6">
+            <div>
+              <h4 className="text-lg font-medium text-white mb-2">总体运势</h4>
+              <p className="text-indigo-200/90">{fortune.fortune.general}</p>
             </div>
             
-            <div className="md:col-span-8 space-y-6">
-              <div>
-                <h4 className="text-lg font-medium text-white mb-2">总体运势</h4>
-                <p className="text-indigo-200/90">{fortune.fortune.general}</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-blue-900/20 rounded-lg p-3">
+                <span className="text-indigo-300 text-sm block mb-1">幸运色彩</span>
+                <span className="text-white text-lg">{fortune.fortune.luckyColor}</span>
               </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-blue-900/20 rounded-lg p-3">
-                  <span className="text-indigo-300 text-sm block mb-1">幸运色彩</span>
-                  <span className="text-white text-lg">{fortune.fortune.luckyColor}</span>
-                </div>
-                <div className="bg-blue-900/20 rounded-lg p-3">
-                  <span className="text-indigo-300 text-sm block mb-1">幸运数字</span>
-                  <span className="text-white text-lg">{fortune.fortune.luckyNumber}</span>
-                </div>
+              <div className="bg-blue-900/20 rounded-lg p-3">
+                <span className="text-indigo-300 text-sm block mb-1">幸运数字</span>
+                <span className="text-white text-lg">{fortune.fortune.luckyNumber}</span>
               </div>
-              
-              <div className="grid grid-cols-3 gap-4">
-                <div className="bg-blue-900/20 rounded-lg p-3">
-                  <h5 className="text-indigo-300 text-sm mb-1">爱情运</h5>
-                  <p className="text-indigo-200/90 text-sm">{fortune.fortune.love}</p>
-                </div>
-                <div className="bg-blue-900/20 rounded-lg p-3">
-                  <h5 className="text-indigo-300 text-sm mb-1">事业运</h5>
-                  <p className="text-indigo-200/90 text-sm">{fortune.fortune.career}</p>
-                </div>
-                <div className="bg-blue-900/20 rounded-lg p-3">
-                  <h5 className="text-indigo-300 text-sm mb-1">健康运</h5>
-                  <p className="text-indigo-200/90 text-sm">{fortune.fortune.health}</p>
-                </div>
-              </div>
-              
-              <button 
-                onClick={drawCard}
-                disabled={isDrawing}
-                className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-lg transition-colors"
-              >
-                重新抽牌
-              </button>
             </div>
+            
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-blue-900/20 rounded-lg p-3">
+                <h5 className="text-indigo-300 text-sm mb-1">爱情运</h5>
+                <p className="text-indigo-200/90 text-sm">{fortune.fortune.love}</p>
+              </div>
+              <div className="bg-blue-900/20 rounded-lg p-3">
+                <h5 className="text-indigo-300 text-sm mb-1">事业运</h5>
+                <p className="text-indigo-200/90 text-sm">{fortune.fortune.career}</p>
+              </div>
+              <div className="bg-blue-900/20 rounded-lg p-3">
+                <h5 className="text-indigo-300 text-sm mb-1">健康运</h5>
+                <p className="text-indigo-200/90 text-sm">{fortune.fortune.health}</p>
+              </div>
+            </div>
+            
+            <button 
+              onClick={drawCard}
+              disabled={isDrawing}
+              className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white py-3 rounded-lg transition-colors"
+            >
+              重新抽牌
+            </button>
           </div>
-        )}
+        </div>
       </div>
     </section>
   );
