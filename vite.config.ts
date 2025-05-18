@@ -5,7 +5,7 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
   optimizeDeps: {
-    exclude: [],
+    exclude: ['lottie-react'],
   },
   // Configure static asset handling
   publicDir: 'public',
