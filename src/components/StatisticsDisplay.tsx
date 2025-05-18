@@ -8,10 +8,6 @@ export const StatisticsDisplay: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const { getStatistics } = useStatistics();
 
-  useEffect(() => {
-    loadStatistics();
-  }, []);
-
   const loadStatistics = async () => {
     try {
       setLoading(true);
@@ -24,6 +20,26 @@ export const StatisticsDisplay: React.FC = () => {
     }
   };
 
+  // 监听本地存储变化
+  useEffect(() => {
+    const handleStorageChange = () => {
+      loadStatistics();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    // 添加自定义事件监听
+    window.addEventListener('journalUpdated', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('journalUpdated', handleStorageChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    loadStatistics();
+  }, []);
+
   if (loading) {
     return <LoadingSpinner />;
   }
@@ -34,17 +50,17 @@ export const StatisticsDisplay: React.FC = () => {
 
   return (
     <div className="grid grid-cols-3 gap-4">
-      <div className="bg-blue-900/20 backdrop-blur-sm rounded-xl p-4 border border-blue-700/40 text-center">
+      <div className="bg-surface-800/20 backdrop-blur-sm rounded-xl p-4 border border-surface-700/40 text-center">
         <p className="text-2xl font-bold text-white">{stats.readingsCount}</p>
-        <p className="text-xs text-indigo-200/70">解读次数</p>
+        <p className="text-xs text-surface-300/70">解读次数</p>
       </div>
-      <div className="bg-blue-900/20 backdrop-blur-sm rounded-xl p-4 border border-blue-700/40 text-center">
+      <div className="bg-surface-800/20 backdrop-blur-sm rounded-xl p-4 border border-surface-700/40 text-center">
         <p className="text-2xl font-bold text-white">{stats.favoritesCount}</p>
-        <p className="text-xs text-indigo-200/70">收藏数</p>
+        <p className="text-xs text-surface-300/70">收藏数</p>
       </div>
-      <div className="bg-blue-900/20 backdrop-blur-sm rounded-xl p-4 border border-blue-700/40 text-center">
+      <div className="bg-surface-800/20 backdrop-blur-sm rounded-xl p-4 border border-surface-700/40 text-center">
         <p className="text-2xl font-bold text-white">{stats.journalCount}</p>
-        <p className="text-xs text-indigo-200/70">日志数</p>
+        <p className="text-xs text-surface-300/70">日志数</p>
       </div>
     </div>
   );

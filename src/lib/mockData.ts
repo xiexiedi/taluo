@@ -32,6 +32,9 @@ export function saveJournalEntry(entry: Omit<JournalEntry, 'id' | 'timestamp'>):
     entries.push(newEntry);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
     
+    // 触发自定义事件通知统计数据更新
+    window.dispatchEvent(new Event('journalUpdated'));
+    
     return newEntry;
   } catch (error) {
     console.error('Error saving journal entry:', error);
@@ -44,6 +47,9 @@ export function deleteJournalEntry(id: string): void {
     const entries = getJournalEntries();
     const filtered = entries.filter(entry => entry.id !== id);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
+    
+    // 触发自定义事件通知统计数据更新
+    window.dispatchEvent(new Event('journalUpdated'));
   } catch (error) {
     console.error('Error deleting journal entry:', error);
     throw new Error('Failed to delete journal entry');

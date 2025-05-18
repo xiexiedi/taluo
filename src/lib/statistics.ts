@@ -1,4 +1,4 @@
-import { getReadings } from './readings';
+import { getJournalEntries } from './mockData';
 import { useAuth } from './auth';
 
 export interface UserStatistics {
@@ -10,15 +10,15 @@ export interface UserStatistics {
 export async function getUserStatistics(userId: string): Promise<UserStatistics> {
   try {
     // 获取所有读数
-    const readings = await getReadings(userId);
+    const readings = JSON.parse(localStorage.getItem('tarot_readings') || '[]');
     
     // 计算统计数据
-    const readingsCount = readings.length;
-    const favoritesCount = readings.filter(r => r.is_favorite).length;
+    const readingsCount = readings.filter((r: any) => r.user_id === userId).length;
+    const favoritesCount = readings.filter((r: any) => r.user_id === userId && r.is_favorite).length;
     
-    // 获取日志数量
-    const journalEntries = JSON.parse(localStorage.getItem('journal_entries') || '[]');
-    const journalCount = journalEntries.filter((entry: any) => entry.user_id === userId).length;
+    // 获取日志数量 - 直接从本地存储获取
+    const journalEntries = getJournalEntries();
+    const journalCount = journalEntries.length;
 
     return {
       readingsCount,
