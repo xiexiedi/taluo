@@ -3,8 +3,18 @@ import { ChevronRight } from 'lucide-react';
 import { SpreadOption } from '../components/SpreadOption';
 import { TarotCard } from '../components/TarotCard';
 import { DailyFortune } from '../components/DailyFortune';
+import { useNavigate } from 'react-router-dom';
 
 export const Home: React.FC = () => {
+  const navigate = useNavigate();
+  const [majorFilter, setMajorFilter] = useState<string>('all');
+  const [minorFilters, setMinorFilters] = useState<Set<string>>(new Set());
+
+  // 导航到抽牌页面
+  const navigateToDrawCards = (spreadId?: string) => {
+    navigate('/draw', { state: { spreadId } });
+  };
+
   // Major Arcana cards
   const majorArcana = [
     'The Fool', 'The Magician', 'The High Priestess', 'The Empress',
@@ -34,10 +44,6 @@ export const Home: React.FC = () => {
                 'Nine of Pentacles', 'Ten of Pentacles', 'Page of Pentacles', 'Knight of Pentacles',
                 'Queen of Pentacles', 'King of Pentacles']
   };
-
-  // Filter states
-  const [majorFilter, setMajorFilter] = useState<string>('all');
-  const [minorFilters, setMinorFilters] = useState<Set<string>>(new Set());
 
   // Filter functions
   const getFilteredMajorArcana = () => {
@@ -82,32 +88,43 @@ export const Home: React.FC = () => {
       <section>
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-semibold text-white">选择牌阵</h3>
-          <button className="flex items-center text-indigo-300 text-sm hover:text-indigo-200 transition-colors">
+          <button 
+            onClick={() => navigateToDrawCards()}
+            className="flex items-center text-indigo-300 text-sm hover:text-indigo-200 transition-colors"
+          >
             查看全部 <ChevronRight className="w-4 h-4 ml-1" />
           </button>
         </div>
         
         <div className="flex overflow-x-auto pb-4 space-x-4 scrollbar-hide">
-          <SpreadOption 
-            title="单张牌阵" 
-            description="获取每日指引" 
-            cardCount={1} 
-          />
-          <SpreadOption 
-            title="三张牌阵" 
-            description="过去、现在、未来" 
-            cardCount={3} 
-          />
-          <SpreadOption 
-            title="凯尔特十字" 
-            description="详细人生解读" 
-            cardCount={10} 
-          />
-          <SpreadOption 
-            title="关系牌阵" 
-            description="洞察人际关系" 
-            cardCount={5} 
-          />
+          <div onClick={() => navigateToDrawCards('single')}>
+            <SpreadOption 
+              title="单张牌阵" 
+              description="获取每日指引" 
+              cardCount={1} 
+            />
+          </div>
+          <div onClick={() => navigateToDrawCards('three')}>
+            <SpreadOption 
+              title="三张牌阵" 
+              description="过去、现在、未来" 
+              cardCount={3} 
+            />
+          </div>
+          <div onClick={() => navigateToDrawCards('celtic')}>
+            <SpreadOption 
+              title="凯尔特十字" 
+              description="详细人生解读" 
+              cardCount={10} 
+            />
+          </div>
+          <div onClick={() => navigateToDrawCards('relationship')}>
+            <SpreadOption 
+              title="关系牌阵" 
+              description="洞察人际关系" 
+              cardCount={5} 
+            />
+          </div>
         </div>
       </section>
       
@@ -115,7 +132,10 @@ export const Home: React.FC = () => {
       <section>
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-semibold text-white">卡牌查看</h3>
-          <button className="flex items-center text-indigo-300 text-sm hover:text-indigo-200 transition-colors">
+          <button 
+            onClick={() => navigateToDrawCards()}
+            className="flex items-center text-indigo-300 text-sm hover:text-indigo-200 transition-colors"
+          >
             查看牌组 <ChevronRight className="w-4 h-4 ml-1" />
           </button>
         </div>
@@ -191,7 +211,10 @@ export const Home: React.FC = () => {
       </section>
       
       {/* Beginner's Guide */}
-      <section className="bg-blue-900/20 backdrop-blur-sm rounded-xl p-4 border border-blue-700/40 shadow-lg">
+      <section 
+        className="bg-blue-900/20 backdrop-blur-sm rounded-xl p-4 border border-blue-700/40 shadow-lg cursor-pointer hover:border-blue-600/50 transition-colors"
+        onClick={() => navigateToDrawCards()}
+      >
         <h3 className="text-lg font-semibold text-white mb-2">塔罗新手？</h3>
         <p className="text-indigo-200/80 mb-3">跟随我们的新手指南，探索古老的塔罗奥秘。</p>
         <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors">
