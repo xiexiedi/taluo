@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { TarotCard } from './TarotCard';
 import { supabase } from '../lib/supabase';
 import { LoadingSpinner } from './LoadingSpinner';
+import { useAuth } from '../lib/auth';
+import { saveReading } from '../lib/readings';
+import type { TarotCard as TarotCardType } from '../lib/types';
 
 interface DailyFortuneState {
   card: string | null;
@@ -112,12 +115,16 @@ export const DailyFortune: React.FC = () => {
         return false;
       }
 
+      const today = new Date().toISOString().split('T')[0];
+      
       const { data: existingFortune, error: fetchError } = await supabase
         .from('readings')
         .select('*')
         .eq('user_id', session.user.id)
+        .eq('spread_type', 'daily')
         .eq('type', 'daily')
-        .eq('created_at::date', new Date().toISOString().split('T')[0])
+        .gte('created_at', today)
+        .lt('created_at', new Date(new Date(today).getTime() + 86400000).toISOString())
         .single();
 
       if (fetchError) {
@@ -153,21 +160,23 @@ export const DailyFortune: React.FC = () => {
         return;
       }
 
-      const { error: insertError } = await supabase
-        .from('readings')
-        .insert({
-          user_id: session.user.id,
-          type: 'daily',
-          spread_type: 'daily',
-          cards: [{
-            name: data.card,
-            isReversed: data.isReversed
-          }],
-          notes: data.fortune.general,
-          is_favorite: false
-        });
-
-      if (insertError) throw insertError;
+      await saveReading(
+        session.user.id,
+        'daily',
+        'daily',
+        [{
+          name: data.card,
+          isReversed: data.isReversed
+        }],
+        {
+          general: data.fortune.general,
+          love: data.fortune.love,
+          career: data.fortune.career,
+          health: data.fortune.health,
+          luckyColor: data.fortune.luckyColor,
+          luckyNumber: data.fortune.luckyNumber
+        }
+      );
     } catch (err) {
       console.error('Error saving fortune:', err);
       setError(err instanceof Error ? err.message : '保存运势时出错');
