@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { TarotCard } from '../components/TarotCard';
-import { CalendarDays, Search, Clock, Trash2, AlertTriangle, X } from 'lucide-react';
-import { collection, query, orderBy, getDocs } from 'firebase/firestore';
-import { db, clearAllReadings } from '../lib/firebase';
+import { CalendarDays, Clock, Search, Edit2, Trash2, Check, X, AlertTriangle } from 'lucide-react';
+import { collection, query, orderBy, getDocs, deleteDoc, doc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 import { useNavigate } from 'react-router-dom';
 
 interface HistoryRecord {
@@ -28,9 +28,10 @@ interface HistoryRecord {
 export const Favorites: React.FC = () => {
   const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [clearing, setClearing] = useState(false);
-  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const navigate = useNavigate();
 
   const fetchHistory = async () => {
@@ -93,18 +94,9 @@ export const Favorites: React.FC = () => {
     fetchHistory();
   }, []);
 
-  const handleClearHistory = async () => {
-    setClearing(true);
-    try {
-      await clearAllReadings();
-      setHistory([]);
-      setSelectedItems(new Set());
-      setShowClearConfirm(false);
-    } catch (error) {
-      console.error('Error clearing history:', error);
-    } finally {
-      setClearing(false);
-    }
+  const toggleEditMode = () => {
+    setIsEditMode(!isEditMode);
+    setSelectedItems(new Set());
   };
 
   const toggleItemSelection = (id: string) => {
@@ -117,11 +109,34 @@ export const Favorites: React.FC = () => {
     setSelectedItems(newSelection);
   };
 
-  const selectAll = () => {
+  const handleSelectAll = () => {
     if (selectedItems.size === history.length) {
       setSelectedItems(new Set());
     } else {
       setSelectedItems(new Set(history.map(item => item.id)));
+    }
+  };
+
+  const handleDelete = async () => {
+    if (selectedItems.size === 0) return;
+    
+    setDeleting(true);
+    try {
+      const deletePromises = Array.from(selectedItems).map(id => {
+        const recordType = history.find(item => item.id === id)?.type;
+        const collectionName = recordType === 'daily' ? 'fortunes' : 'readings';
+        return deleteDoc(doc(db, collectionName, id));
+      });
+
+      await Promise.all(deletePromises);
+      
+      setHistory(history.filter(item => !selectedItems.has(item.id)));
+      setSelectedItems(new Set());
+      setShowDeleteConfirm(false);
+    } catch (error) {
+      console.error('Error deleting records:', error);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -146,10 +161,25 @@ export const Favorites: React.FC = () => {
     return (
       <div 
         key={record.id}
-        onClick={() => navigate(`/reading/${record.id}`)}
-        className="bg-blue-800/30 backdrop-blur-sm rounded-xl border border-blue-700/40 shadow-lg hover:bg-blue-800/40 transition-all duration-300 cursor-pointer overflow-hidden"
+        className={`bg-blue-800/30 backdrop-blur-sm rounded-xl border ${
+          isEditMode ? 'border-blue-700/40' : selectedItems.has(record.id) ? 'border-indigo-500' : 'border-blue-700/40'
+        } shadow-lg transition-all duration-300 overflow-hidden relative`}
       >
-        {/* Header */}
+        {isEditMode && (
+          <div 
+            className="absolute inset-0 bg-black/20 backdrop-blur-[1px] flex items-center justify-center z-10"
+            onClick={() => toggleItemSelection(record.id)}
+          >
+            <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-colors ${
+              selectedItems.has(record.id) 
+                ? 'bg-indigo-600 border-indigo-600' 
+                : 'border-white/50 hover:border-white'
+            }`}>
+              {selectedItems.has(record.id) && <Check className="w-4 h-4 text-white" />}
+            </div>
+          </div>
+        )}
+
         <div className="p-6 border-b border-blue-700/40">
           <div className="flex justify-between items-start">
             <div>
@@ -171,18 +201,11 @@ export const Favorites: React.FC = () => {
           </div>
         </div>
 
-        {/* Content */}
         <div className="flex flex-col md:flex-row">
-          {/* Cards Section */}
           <div className="md:w-1/3 border-b md:border-b-0 md:border-r border-blue-700/40">
             <div className="p-6">
               <div className="relative">
-                <div className={`flex gap-4 ${record.cards.length > 3 ? 'overflow-x-auto scrollbar-hide' : ''}`} 
-                     style={{ 
-                       maxWidth: '100%',
-                       scrollbarWidth: 'none',
-                       msOverflowStyle: 'none'
-                     }}>
+                <div className={`flex gap-4 ${record.cards.length > 3 ? 'overflow-x-auto scrollbar-hide' : ''}`}>
                   {record.cards.map((card, index) => (
                     <div key={index} className="w-24 flex-shrink-0">
                       <div className="relative">
@@ -203,7 +226,6 @@ export const Favorites: React.FC = () => {
             </div>
           </div>
 
-          {/* Interpretation Section */}
           <div className="md:w-2/3 p-6">
             <div className="space-y-4">
               <div className="bg-blue-900/20 rounded-lg p-4">
@@ -239,20 +261,39 @@ export const Favorites: React.FC = () => {
         <div className="flex items-center space-x-3">
           {history.length > 0 && (
             <>
-              <button
-                onClick={selectAll}
-                className="px-4 py-2 bg-blue-800/50 text-indigo-200 rounded-lg hover:bg-blue-800/70 transition-colors"
-              >
-                {selectedItems.size === history.length ? '取消全选' : '全选'}
-              </button>
-              <button
-                onClick={() => setShowClearConfirm(true)}
-                disabled={clearing || loading}
-                className="px-4 py-2 bg-red-600/80 text-white rounded-lg hover:bg-red-700/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                {clearing ? '清除中...' : '清除历史'}
-              </button>
+              {isEditMode ? (
+                <>
+                  <button
+                    onClick={handleSelectAll}
+                    className="px-4 py-2 bg-blue-800/50 text-indigo-200 rounded-lg hover:bg-blue-800/70 transition-colors"
+                  >
+                    {selectedItems.size === history.length ? '取消全选' : '全选'}
+                  </button>
+                  <button
+                    onClick={() => setShowDeleteConfirm(true)}
+                    disabled={selectedItems.size === 0}
+                    className="px-4 py-2 bg-red-600/80 text-white rounded-lg hover:bg-red-700/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    删除
+                  </button>
+                  <button
+                    onClick={toggleEditMode}
+                    className="px-4 py-2 bg-blue-800/50 text-indigo-200 rounded-lg hover:bg-blue-800/70 transition-colors flex items-center"
+                  >
+                    <X className="w-4 h-4 mr-2" />
+                    完成
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={toggleEditMode}
+                  className="px-4 py-2 bg-blue-800/50 text-indigo-200 rounded-lg hover:bg-blue-800/70 transition-colors flex items-center"
+                >
+                  <Edit2 className="w-4 h-4 mr-2" />
+                  编辑
+                </button>
+              )}
             </>
           )}
           <button className="p-2 rounded-full bg-blue-800/50 text-indigo-200 hover:bg-blue-800/70 transition-colors">
@@ -261,46 +302,46 @@ export const Favorites: React.FC = () => {
         </div>
       </div>
 
-      {/* Clear Confirmation Modal */}
-      {showClearConfirm && (
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-blue-900/90 rounded-xl border border-blue-700/50 p-6 max-w-md w-full">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center">
                 <AlertTriangle className="w-6 h-6 text-red-400 mr-2" />
-                <h3 className="text-xl font-semibold text-white">确认清除</h3>
+                <h3 className="text-xl font-semibold text-white">确认删除</h3>
               </div>
               <button
-                onClick={() => setShowClearConfirm(false)}
+                onClick={() => setShowDeleteConfirm(false)}
                 className="p-1 hover:bg-blue-800/50 rounded-full transition-colors"
               >
                 <X className="w-5 h-5 text-indigo-200" />
               </button>
             </div>
             <p className="text-indigo-200 mb-6">
-              确定要清除所有历史记录吗？此操作不可撤销。
+              确定要删除选中的 {selectedItems.size} 条记录吗？此操作不可撤销。
             </p>
             <div className="flex justify-end space-x-3">
               <button
-                onClick={() => setShowClearConfirm(false)}
+                onClick={() => setShowDeleteConfirm(false)}
                 className="px-4 py-2 bg-blue-800/50 text-indigo-200 rounded-lg hover:bg-blue-800/70 transition-colors"
               >
                 取消
               </button>
               <button
-                onClick={handleClearHistory}
-                disabled={clearing}
+                onClick={handleDelete}
+                disabled={deleting}
                 className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center"
               >
-                {clearing ? (
+                {deleting ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
-                    清除中...
+                    删除中...
                   </>
                 ) : (
                   <>
                     <Trash2 className="w-4 h-4 mr-2" />
-                    确认清除
+                    确认删除
                   </>
                 )}
               </button>
