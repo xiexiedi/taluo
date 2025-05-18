@@ -4,6 +4,7 @@ import { Info, Share2, Save, ArrowLeft, WifiOff } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { saveReading } from '../lib/readings';
 import { LoadingSpinner } from '../components/LoadingSpinner';
+import { LoadingAnimation } from '../components/LoadingAnimation';
 import type { TarotCard as TarotCardType, ReadingInterpretation } from '../lib/types';
 
 interface DrawnCard {
@@ -28,6 +29,7 @@ export const DrawCards: React.FC = () => {
   const [drawnCards, setDrawnCards] = useState<TarotCardType[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [showLoadingAnimation, setShowLoadingAnimation] = useState(false);
 
   const spreads = [
     { id: 'single', name: '单张牌阵', count: 1, description: '简单直接的指引' },
@@ -129,10 +131,14 @@ export const DrawCards: React.FC = () => {
   };
 
   const drawCards = async (count: number, spreadName: string, spreadId: string) => {
+    setShowLoadingAnimation(true);
     setIsDrawing(true);
     setError(null);
     
     try {
+      // 模拟洗牌时间
+      await new Promise(resolve => setTimeout(resolve, 2500));
+      
       const shuffled = [...allCardNames].sort(() => 0.5 - Math.random());
       const selected = shuffled.slice(0, count).map(name => ({
         name,
@@ -144,6 +150,7 @@ export const DrawCards: React.FC = () => {
     } catch (error) {
       setError(error instanceof Error ? error.message : '抽牌时出错，请稍后重试');
     } finally {
+      setShowLoadingAnimation(false);
       setIsDrawing(false);
     }
   };
@@ -372,6 +379,8 @@ export const DrawCards: React.FC = () => {
 
   return (
     <div className="py-6 space-y-6">
+      {showLoadingAnimation && <LoadingAnimation />}
+      
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center">
           {(selectedSpread || drawnCards.length > 0) && (
