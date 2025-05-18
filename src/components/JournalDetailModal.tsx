@@ -54,7 +54,7 @@ export const JournalDetailModal: React.FC<JournalDetailModalProps> = ({
       onClick={onClose}
     >
       <div 
-        className="relative w-full max-w-2xl bg-gradient-to-b from-blue-900/90 to-purple-900/90 rounded-2xl border border-blue-700/50 shadow-xl animate-in fade-in slide-in-from-bottom-4"
+        className="relative w-full max-w-2xl bg-gradient-to-b from-blue-900/90 to-purple-900/90 rounded-2xl border border-blue-700/50 shadow-xl"
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between p-4 border-b border-blue-700/50">
