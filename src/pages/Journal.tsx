@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, PenLine, Search, Calendar, ArrowUpCircle, RefreshCw, AlertCircle, WifiOff } from 'lucide-react';
 import { CreateJournalEntry } from '../components/CreateJournalEntry';
+import { JournalDetailModal } from '../components/JournalDetailModal';
 import { mockJournalEntries, JournalEntry } from '../lib/mockData';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 
 export const Journal: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,6 +47,11 @@ export const Journal: React.FC = () => {
   
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleViewDetail = (entry: JournalEntry) => {
+    setSelectedEntry(entry);
+    setShowDetailModal(true);
   };
 
   const getLevelStyle = (level: JournalEntry['level']) => {
@@ -126,7 +134,8 @@ export const Journal: React.FC = () => {
           {journalEntries.map((entry) => (
             <div 
               key={entry.id}
-              className="bg-blue-800/30 backdrop-blur-sm rounded-xl p-5 border border-blue-700/40 shadow-lg"
+              className="bg-blue-900/20 backdrop-blur-sm rounded-xl p-5 border border-blue-700/40 shadow-lg hover:border-blue-600/50 transition-colors cursor-pointer"
+              onClick={() => handleViewDetail(entry)}
             >
               <div className="flex justify-between items-start mb-3">
                 <h3 className="font-semibold text-white">{entry.title}</h3>
@@ -135,7 +144,7 @@ export const Journal: React.FC = () => {
                 </div>
               </div>
               
-              <p className="text-sm text-indigo-200/80 mb-3">
+              <p className="text-sm text-indigo-200/80 mb-3 line-clamp-2">
                 {entry.content}
               </p>
               
@@ -143,7 +152,13 @@ export const Journal: React.FC = () => {
                 <div className="text-xs text-indigo-200/70">
                   {new Date(entry.timestamp).toLocaleString('zh-CN')}
                 </div>
-                <button className="text-indigo-300 text-sm hover:text-indigo-200 transition-colors flex items-center">
+                <button 
+                  className="text-indigo-300 text-sm hover:text-indigo-200 transition-colors flex items-center"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleViewDetail(entry);
+                  }}
+                >
                   <BookOpen className="w-4 h-4 mr-1" />
                   查看详情
                 </button>
@@ -173,6 +188,17 @@ export const Journal: React.FC = () => {
         <CreateJournalEntry
           onClose={() => setShowCreateModal(false)}
           onSuccess={fetchEntries}
+        />
+      )}
+
+      {selectedEntry && (
+        <JournalDetailModal
+          entry={selectedEntry}
+          isOpen={showDetailModal}
+          onClose={() => {
+            setShowDetailModal(false);
+            setSelectedEntry(null);
+          }}
         />
       )}
     </div>
