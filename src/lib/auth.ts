@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import { supabase } from './supabase';
+import { v4 as uuidv4 } from 'uuid';
 
 export interface AuthUser {
   id: string;
@@ -24,38 +24,68 @@ export const useAuth = () => {
   return context;
 };
 
-export const signIn = async (username: string, password: string) => {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: `${username}@example.com`,
-    password,
-  });
+const USERS_STORAGE_KEY = 'tarot_users';
+const CURRENT_USER_KEY = 'tarot_current_user';
 
-  if (error) throw error;
-  return data;
+interface StoredUser {
+  id: string;
+  username: string;
+  password: string;
+}
+
+function getUsers(): StoredUser[] {
+  try {
+    const stored = localStorage.getItem(USERS_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveUsers(users: StoredUser[]) {
+  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users));
+}
+
+export const signIn = async (username: string, password: string) => {
+  const users = getUsers();
+  const user = users.find(u => u.username === username && u.password === password);
+  
+  if (!user) {
+    throw new Error('Invalid username or password');
+  }
+
+  localStorage.setItem(CURRENT_USER_KEY, JSON.stringify({
+    id: user.id,
+    username: user.username
+  }));
+
+  return { user: { id: user.id, username: user.username } };
 };
 
 export const signUp = async (username: string, password: string) => {
-  const { data, error } = await supabase.auth.signUp({
-    email: `${username}@example.com`,
-    password,
-    options: {
-      data: { username }
-    }
-  });
+  const users = getUsers();
+  
+  if (users.some(u => u.username === username)) {
+    throw new Error('Username already exists');
+  }
 
-  if (error) throw error;
+  const newUser: StoredUser = {
+    id: uuidv4(),
+    username,
+    password
+  };
 
-  // Create user profile
-  const { error: profileError } = await supabase
-    .from('users')
-    .insert({ id: data.user?.id, username });
+  users.push(newUser);
+  saveUsers(users);
 
-  if (profileError) throw profileError;
+  localStorage.setItem(CURRENT_USER_KEY, JSON.stringify({
+    id: newUser.id,
+    username: newUser.username
+  }));
 
-  return data;
+  return { user: { id: newUser.id, username: newUser.username } };
 };
 
 export const signOut = async () => {
-  const { error } = await supabase.auth.signOut();
-  if (error) throw error;
-};
+  localStorage.removeItem(CURRENT_USER_KEY);
+};</bortAction>
