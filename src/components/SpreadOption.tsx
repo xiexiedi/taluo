@@ -35,7 +35,7 @@ export const SpreadOption: React.FC<SpreadOptionProps> = ({
 
   return (
     <div 
-      className="flex-shrink-0 w-44 h-40 bg-blue-800/30 backdrop-blur-sm rounded-xl p-4 border border-blue-700/40 shadow-lg flex flex-col justify-between cursor-pointer hover:bg-blue-800/50 transition-all duration-300 hover:scale-105"
+      className="flex-shrink-0 w-44 h-40 bg-blue-900/20 backdrop-blur-sm rounded-xl p-4 border border-blue-700/40 shadow-lg flex flex-col justify-between cursor-pointer hover:bg-blue-800/50 transition-all duration-300 hover:scale-105"
     >
       <div>
         <h4 className="font-semibold text-white">{title}</h4>

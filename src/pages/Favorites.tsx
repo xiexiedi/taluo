@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TarotCard } from '../components/TarotCard';
 import { CalendarDays, Clock, Search, Edit2, Trash2, Check, X, AlertTriangle, WifiOff, Star } from 'lucide-react';
 import { useAuth } from '../lib/auth';
@@ -17,6 +17,16 @@ export const Favorites: React.FC = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const navigate = useNavigate();
+
+  const getSpreadName = (spreadType: string): string => {
+    const spreadNames: Record<string, string> = {
+      'single': '单张牌阵',
+      'three': '三张牌阵',
+      'celtic': '凯尔特十字',
+      'daily': '每日运势'
+    };
+    return spreadNames[spreadType] || spreadType;
+  };
 
   const fetchReadings = async () => {
     if (!user) return;
@@ -205,7 +215,7 @@ export const Favorites: React.FC = () => {
                     )}
                     
                     <div>
-                      <h3 className="text-lg font-semibold text-white tracking-wide">{reading.spread_type}</h3>
+                      <h3 className="text-lg font-semibold text-white tracking-wide">{getSpreadName(reading.spread_type)}</h3>
                       <div className="flex items-center space-x-4 mt-2">
                         <div className="flex items-center text-sm text-indigo-200/70">
                           <CalendarDays className="w-4 h-4 mr-1" />
@@ -231,7 +241,7 @@ export const Favorites: React.FC = () => {
                       <Star className="w-5 h-5" fill={reading.is_favorite ? 'currentColor' : 'none'} />
                     </button>
                     <div className="text-xs bg-blue-700/50 text-blue-200 py-1 px-2 rounded-full">
-                      {reading.type === 'daily' ? '每日运势' : reading.spread_type}
+                      {reading.type === 'daily' ? '每日运势' : getSpreadName(reading.spread_type)}
                     </div>
                   </div>
                 </div>
