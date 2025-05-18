@@ -64,8 +64,14 @@ export const CreateJournalEntry: React.FC<CreateJournalEntryProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-blue-950/90 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-blue-900/80 backdrop-blur-md rounded-xl border border-blue-700/50 w-full max-w-2xl shadow-xl animate-in fade-in slide-in-from-bottom-4">
+    <div 
+      className="fixed inset-0 bg-blue-950/90 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-blue-900/80 backdrop-blur-md rounded-xl border border-blue-700/50 w-full max-w-2xl shadow-xl animate-in fade-in slide-in-from-bottom-4"
+        onClick={e => e.stopPropagation()}
+      >
         <div className="flex items-center justify-between p-4 border-b border-blue-700/50">
           <h2 className="text-xl font-semibold text-white">写新日志</h2>
           <button
