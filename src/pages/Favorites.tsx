@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { TarotCard } from '../components/TarotCard';
-import { CalendarDays, ChevronRight, Search } from 'lucide-react';
+import { CalendarDays, ChevronRight, Search, ChevronDown } from 'lucide-react';
 import { collection, query, orderBy, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 
@@ -27,6 +27,7 @@ interface HistoryRecord {
 export const Favorites: React.FC = () => {
   const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expandedRecords, setExpandedRecords] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -88,11 +89,88 @@ export const Favorites: React.FC = () => {
     fetchHistory();
   }, []);
 
+  const toggleRecord = (recordId: string) => {
+    setExpandedRecords(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(recordId)) {
+        newSet.delete(recordId);
+      } else {
+        newSet.add(recordId);
+      }
+      return newSet;
+    });
+  };
+
   const getSpreadTitle = (record: HistoryRecord) => {
     if (record.type === 'daily') {
       return '今日运势';
     }
     return record.spreadName || '塔罗牌阵';
+  };
+
+  const renderExpandedContent = (record: HistoryRecord) => {
+    if (record.type === 'daily') {
+      return (
+        <div className="mt-4 space-y-4">
+          <div className="flex justify-center">
+            <div className="w-48">
+              <TarotCard 
+                name={record.cards[0].name} 
+                isReversed={record.cards[0].isReversed} 
+              />
+            </div>
+          </div>
+          <div className="bg-blue-900/20 rounded-lg p-4">
+            <h4 className="text-white font-medium mb-2">整体解读</h4>
+            <p className="text-indigo-200/90">{record.interpretation.general}</p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="mt-4 space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {record.cards.map((card, index) => (
+            <div key={index} className="flex flex-col items-center space-y-2">
+              <div className="w-40">
+                <TarotCard 
+                  name={card.name} 
+                  isReversed={card.isReversed} 
+                />
+              </div>
+              {card.position && (
+                <p className="text-sm text-indigo-200/90 text-center">
+                  {card.position}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="space-y-4">
+          <div className="bg-blue-900/20 rounded-lg p-4">
+            <h4 className="text-white font-medium mb-2">整体解读</h4>
+            <p className="text-indigo-200/90">{record.interpretation.general}</p>
+          </div>
+
+          {record.interpretation.cards && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {record.interpretation.cards.map((interpretation, index) => (
+                <div key={index} className="bg-blue-900/20 rounded-lg p-4">
+                  <h5 className="text-indigo-300 font-medium mb-2">
+                    {interpretation.position}
+                  </h5>
+                  <p className="text-sm text-indigo-200/90">
+                    {interpretation.meaning}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -109,45 +187,42 @@ export const Favorites: React.FC = () => {
           {history.map((record) => (
             <div 
               key={record.id}
-              className="bg-blue-800/30 backdrop-blur-sm rounded-xl p-5 border border-blue-700/40 shadow-lg"
+              className="bg-blue-800/30 backdrop-blur-sm rounded-xl p-5 border border-blue-700/40 shadow-lg transition-all duration-300"
             >
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="font-semibold text-white">{getSpreadTitle(record)}</h3>
-                  <div className="flex items-center text-xs text-indigo-200/70 mt-1">
-                    <CalendarDays className="w-3 h-3 mr-1" />
-                    {new Date(record.date).toLocaleDateString('zh-CN')}
+              <button 
+                onClick={() => toggleRecord(record.id)}
+                className="w-full text-left"
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-semibold text-white">{getSpreadTitle(record)}</h3>
+                    <div className="flex items-center text-xs text-indigo-200/70 mt-1">
+                      <CalendarDays className="w-3 h-3 mr-1" />
+                      {new Date(record.date).toLocaleDateString('zh-CN')}
+                    </div>
                   </div>
-                </div>
-                <div className="text-xs bg-blue-700/50 text-blue-200 py-1 px-2 rounded-full">
-                  {record.type === 'daily' ? '每日运势' : record.spreadName}
-                </div>
-              </div>
-              
-              <div className="flex overflow-x-auto py-2 space-x-3 scrollbar-hide">
-                {record.cards.map((card, index) => (
-                  <div key={index} className="w-24 flex-shrink-0">
-                    <TarotCard 
-                      name={card.name} 
-                      isReversed={card.isReversed} 
+                  <div className="flex items-center space-x-2">
+                    <div className="text-xs bg-blue-700/50 text-blue-200 py-1 px-2 rounded-full">
+                      {record.type === 'daily' ? '每日运势' : record.spreadName}
+                    </div>
+                    <ChevronDown 
+                      className={`w-5 h-5 text-indigo-200 transition-transform duration-300 ${
+                        expandedRecords.has(record.id) ? 'rotate-180' : ''
+                      }`}
                     />
-                    {card.position && (
-                      <p className="text-xs text-center text-indigo-200/70 mt-2">
-                        {card.position}
-                      </p>
-                    )}
                   </div>
-                ))}
-              </div>
-              
-              <p className="text-sm text-indigo-200/80 mt-3 line-clamp-2">
-                {record.interpretation.general}
-              </p>
-              
-              <button className="text-indigo-300 text-sm mt-3 hover:text-indigo-200 transition-colors flex items-center">
-                查看完整解读
-                <ChevronRight className="w-4 h-4 ml-1" />
+                </div>
               </button>
+              
+              <div 
+                className={`overflow-hidden transition-all duration-300 ${
+                  expandedRecords.has(record.id) 
+                    ? 'max-h-[2000px] opacity-100' 
+                    : 'max-h-0 opacity-0'
+                }`}
+              >
+                {renderExpandedContent(record)}
+              </div>
             </div>
           ))}
         </div>
