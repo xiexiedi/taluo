@@ -14,5 +14,10 @@ export default defineConfig({
   },
   // Configure environment variables
   envDir: './',
-  envPrefix: 'VITE_'
+  envPrefix: 'VITE_',
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src')
+    }
+  }
 });
