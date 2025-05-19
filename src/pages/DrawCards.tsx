@@ -4,7 +4,6 @@ import { Info, Share2, Save, ArrowLeft, WifiOff } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { saveReading } from '../lib/readings';
 import { LoadingSpinner } from '../components/LoadingSpinner';
-import type { TarotCard as TarotCardType, ReadingInterpretation } from '../lib/types';
 
 interface DrawnCard {
   name: string;
@@ -25,9 +24,10 @@ export const DrawCards: React.FC = () => {
   const { user } = useAuth();
   const [selectedSpread, setSelectedSpread] = useState<string | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [drawnCards, setDrawnCards] = useState<TarotCardType[]>([]);
+  const [drawnCards, setDrawnCards] = useState<DrawnCard[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [showLoadingAnimation, setShowLoadingAnimation] = useState(false);
 
   const spreads = [
     { id: 'single', name: '单张牌阵', count: 1, description: '简单直接的指引' },
@@ -94,7 +94,7 @@ export const DrawCards: React.FC = () => {
   };
 
   const handleSaveReading = async (
-    cards: TarotCardType[],
+    cards: DrawnCard[],
     spreadName: string,
     spreadId: string
   ) => {
@@ -131,8 +131,12 @@ export const DrawCards: React.FC = () => {
   const drawCards = async (count: number, spreadName: string, spreadId: string) => {
     setIsDrawing(true);
     setError(null);
+    setShowLoadingAnimation(true);
     
     try {
+      // 模拟抽牌延迟
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
       const shuffled = [...allCardNames].sort(() => 0.5 - Math.random());
       const selected = shuffled.slice(0, count).map(name => ({
         name,
@@ -145,6 +149,7 @@ export const DrawCards: React.FC = () => {
       setError(error instanceof Error ? error.message : '抽牌时出错，请稍后重试');
     } finally {
       setIsDrawing(false);
+      setShowLoadingAnimation(false);
     }
   };
 
@@ -366,8 +371,17 @@ export const DrawCards: React.FC = () => {
     );
   }
 
-  if (isDrawing) {
-    return <LoadingSpinner />;
+  if (showLoadingAnimation) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px]">
+        <img 
+          src="/素材库/加载动画 copy.gif" 
+          alt="抽牌中"
+          className="w-32 h-32 mb-4"
+        />
+        <p className="text-lg text-indigo-200">抽牌中...</p>
+      </div>
+    );
   }
 
   return (
