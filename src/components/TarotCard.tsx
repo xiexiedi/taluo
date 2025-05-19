@@ -105,7 +105,7 @@ export const TarotCard: React.FC<TarotCardProps> = ({
       console.error(`No Chinese name mapping found for card: ${cardName}`);
       return '';
     }
-    return `/src/assets/塔罗牌库/${chineseName}.png`;
+    return `/塔罗牌库/${chineseName}.png`;
   };
 
   const handleImageError = () => {
@@ -136,7 +136,7 @@ export const TarotCard: React.FC<TarotCardProps> = ({
           <div className="backface-hidden absolute w-full h-full">
             <div className="w-full h-full rounded-lg shadow-lg overflow-hidden">
               <img 
-                src="/src/assets/素材库/卡牌背景 copy.png"
+                src="/素材库/卡牌背景 copy.png"
                 alt="Card Back"
                 className="w-full h-full object-cover"
               />
