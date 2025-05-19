@@ -4,7 +4,6 @@ import { Info, Share2, Save, ArrowLeft, WifiOff } from 'lucide-react';
 import { useAuth } from '../lib/auth';
 import { saveReading } from '../lib/readings';
 import { LoadingSpinner } from '../components/LoadingSpinner';
-import { LoadingModal } from '../components/LoadingModal';
 import type { TarotCard as TarotCardType, ReadingInterpretation } from '../lib/types';
 
 interface DrawnCard {
@@ -26,7 +25,6 @@ export const DrawCards: React.FC = () => {
   const { user } = useAuth();
   const [selectedSpread, setSelectedSpread] = useState<string | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [showLoadingModal, setShowLoadingModal] = useState(false);
   const [drawnCards, setDrawnCards] = useState<TarotCardType[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
@@ -95,38 +93,46 @@ export const DrawCards: React.FC = () => {
     };
   };
 
-  const saveReadingToDatabase = async (
-    cards: DrawnCard[],
+  const handleSaveReading = async (
+    cards: TarotCardType[],
     spreadName: string,
     spreadId: string
   ) => {
+    if (!user) {
+      setError('请先登录再进行占卜');
+      return;
+    }
+
+    setIsSaving(true);
+    setError(null);
+
     try {
       const interpretation = generateInterpretation(cards, spreadId);
       
-      await saveReading({
-        spread_type: spreadId,
-        cards: cards.map((card, index) => ({
+      await saveReading(
+        user.id,
+        'reading',
+        spreadId,
+        cards.map((card, index) => ({
           ...card,
           position: getPositionName(spreadId, index),
           meaning: generateCardMeaning(card)
         })),
-        interpretation,
-        is_favorite: false
-      });
-    } catch (error) {
-      setError(error instanceof Error ? error.message : '保存解读时出错，请稍后重试。');
+        interpretation
+      );
+    } catch (err) {
+      console.error('Error saving reading:', err);
+      setError(err instanceof Error ? err.message : '保存解读时出错，请稍后重试');
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const drawCards = async (count: number, spreadName: string, spreadId: string) => {
-    setShowLoadingModal(true);
     setIsDrawing(true);
     setError(null);
     
     try {
-      // 模拟加载动画时间
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
       const shuffled = [...allCardNames].sort(() => 0.5 - Math.random());
       const selected = shuffled.slice(0, count).map(name => ({
         name,
@@ -134,11 +140,10 @@ export const DrawCards: React.FC = () => {
       }));
       
       setDrawnCards(selected);
-      await saveReadingToDatabase(selected, spreadName, spreadId);
+      await handleSaveReading(selected, spreadName, spreadId);
     } catch (error) {
       setError(error instanceof Error ? error.message : '抽牌时出错，请稍后重试');
     } finally {
-      setShowLoadingModal(false);
       setIsDrawing(false);
     }
   };
@@ -367,7 +372,6 @@ export const DrawCards: React.FC = () => {
 
   return (
     <div className="py-6 space-y-6">
-      <LoadingModal isOpen={showLoadingModal} />
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center">
           {(selectedSpread || drawnCards.length > 0) && (
