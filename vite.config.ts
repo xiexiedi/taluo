@@ -7,8 +7,8 @@ export default defineConfig({
     include: ['@use-gesture/react', '@react-spring/web']
   },
   // Configure static asset handling
-  publicDir: 'public',
-  assetsInclude: ['**/*.png', '**/*.json', '**/*.lottie'],
+  publicDir: 'src/assets',
+  assetsInclude: ['**/*.png', '**/*.json', '**/*.lottie', '**/*.gif'],
   server: {
     watch: {
       usePolling: true,
