@@ -158,10 +158,10 @@ export const DrawCards: React.FC = () => {
 
     return (
       <div className="space-y-12">
-        <div className="grid grid-cols-4 gap-x-8 gap-y-16 max-w-4xl mx-auto relative">
+        <div className="grid grid-cols-4 gap-x-8 gap-y-16 max-w-4xl mx-auto">
           {/* Center Cross */}
           <div className="col-start-2 row-start-1">
-            <div className="relative transform rotate-45 transition-transform duration-500 hover:rotate-0">
+            <div className="relative">
               <TarotCard name={drawnCards[0].name} isReversed={drawnCards[0].isReversed} />
               <div className="absolute -bottom-20 left-0 right-0 text-center">
                 <p className="text-sm font-medium text-white mb-2">{celticPositions[0].name}</p>
@@ -171,7 +171,7 @@ export const DrawCards: React.FC = () => {
           </div>
 
           <div className="col-start-2 row-start-2">
-            <div className="relative transform rotate-45 transition-transform duration-500 hover:rotate-0">
+            <div className="relative">
               <TarotCard name={drawnCards[1].name} isReversed={drawnCards[1].isReversed} />
               <div className="absolute -bottom-20 left-0 right-0 text-center">
                 <p className="text-sm font-medium text-white mb-2">{celticPositions[1].name}</p>
@@ -181,7 +181,7 @@ export const DrawCards: React.FC = () => {
           </div>
 
           <div className="col-start-1 row-start-2">
-            <div className="relative transform rotate-45 transition-transform duration-500 hover:rotate-0">
+            <div className="relative">
               <TarotCard name={drawnCards[2].name} isReversed={drawnCards[2].isReversed} />
               <div className="absolute -bottom-20 left-0 right-0 text-center">
                 <p className="text-sm font-medium text-white mb-2">{celticPositions[2].name}</p>
@@ -191,7 +191,7 @@ export const DrawCards: React.FC = () => {
           </div>
 
           <div className="col-start-3 row-start-2">
-            <div className="relative transform rotate-45 transition-transform duration-500 hover:rotate-0">
+            <div className="relative">
               <TarotCard name={drawnCards[3].name} isReversed={drawnCards[3].isReversed} />
               <div className="absolute -bottom-20 left-0 right-0 text-center">
                 <p className="text-sm font-medium text-white mb-2">{celticPositions[3].name}</p>
@@ -202,7 +202,7 @@ export const DrawCards: React.FC = () => {
 
           {/* Staff */}
           <div className="col-start-4 row-start-1">
-            <div className="relative transform rotate-45 transition-transform duration-500 hover:rotate-0">
+            <div className="relative">
               <TarotCard name={drawnCards[4].name} isReversed={drawnCards[4].isReversed} />
               <div className="absolute -bottom-20 left-0 right-0 text-center">
                 <p className="text-sm font-medium text-white mb-2">{celticPositions[4].name}</p>
@@ -212,7 +212,7 @@ export const DrawCards: React.FC = () => {
           </div>
 
           <div className="col-start-4 row-start-2">
-            <div className="relative transform rotate-45 transition-transform duration-500 hover:rotate-0">
+            <div className="relative">
               <TarotCard name={drawnCards[5].name} isReversed={drawnCards[5].isReversed} />
               <div className="absolute -bottom-20 left-0 right-0 text-center">
                 <p className="text-sm font-medium text-white mb-2">{celticPositions[5].name}</p>
@@ -222,7 +222,7 @@ export const DrawCards: React.FC = () => {
           </div>
 
           <div className="col-start-4 row-start-3">
-            <div className="relative transform rotate-45 transition-transform duration-500 hover:rotate-0">
+            <div className="relative">
               <TarotCard name={drawnCards[6].name} isReversed={drawnCards[6].isReversed} />
               <div className="absolute -bottom-20 left-0 right-0 text-center">
                 <p className="text-sm font-medium text-white mb-2">{celticPositions[6].name}</p>
@@ -232,7 +232,7 @@ export const DrawCards: React.FC = () => {
           </div>
 
           <div className="col-start-4 row-start-4">
-            <div className="relative transform rotate-45 transition-transform duration-500 hover:rotate-0">
+            <div className="relative">
               <TarotCard name={drawnCards[7].name} isReversed={drawnCards[7].isReversed} />
               <div className="absolute -bottom-20 left-0 right-0 text-center">
                 <p className="text-sm font-medium text-white mb-2">{celticPositions[7].name}</p>
@@ -242,7 +242,7 @@ export const DrawCards: React.FC = () => {
           </div>
 
           <div className="col-start-4 row-start-5">
-            <div className="relative transform rotate-45 transition-transform duration-500 hover:rotate-0">
+            <div className="relative">
               <TarotCard name={drawnCards[8].name} isReversed={drawnCards[8].isReversed} />
               <div className="absolute -bottom-20 left-0 right-0 text-center">
                 <p className="text-sm font-medium text-white mb-2">{celticPositions[8].name}</p>
@@ -252,7 +252,7 @@ export const DrawCards: React.FC = () => {
           </div>
 
           <div className="col-start-4 row-start-6">
-            <div className="relative transform rotate-45 transition-transform duration-500 hover:rotate-0">
+            <div className="relative">
               <TarotCard name={drawnCards[9].name} isReversed={drawnCards[9].isReversed} />
               <div className="absolute -bottom-20 left-0 right-0 text-center">
                 <p className="text-sm font-medium text-white mb-2">{celticPositions[9].name}</p>
@@ -293,7 +293,7 @@ export const DrawCards: React.FC = () => {
       case 'single':
         return (
           <div className="flex flex-col items-center space-y-6">
-            <div className="w-64 transform rotate-45 transition-transform duration-500 hover:rotate-0">
+            <div className="w-64">
               <TarotCard 
                 name={drawnCards[0].name} 
                 isReversed={drawnCards[0].isReversed} 
@@ -315,7 +315,7 @@ export const DrawCards: React.FC = () => {
           <div className="grid grid-cols-3 gap-8">
             {drawnCards.slice(0, 3).map((card, index) => (
               <div key={index} className="flex flex-col items-center space-y-4">
-                <div className="w-full max-w-[200px] transform rotate-45 transition-transform duration-500 hover:rotate-0">
+                <div className="w-full max-w-[200px]">
                   <TarotCard 
                     name={card.name} 
                     isReversed={card.isReversed} 
