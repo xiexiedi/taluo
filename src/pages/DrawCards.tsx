@@ -375,7 +375,7 @@ export const DrawCards: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
         <img 
-          src="/素材库/加载动画 copy.gif" 
+          src="/src/sucaiku/加载动画.gif" 
           alt="抽牌中"
           className="w-32 h-32 mb-4"
         />
