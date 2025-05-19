@@ -158,107 +158,105 @@ export const DrawCards: React.FC = () => {
 
     return (
       <div className="space-y-12">
-        <div className="relative w-full h-[800px] overflow-hidden bg-surface-800/20 rounded-xl border border-surface-700/30 p-8">
-          <div className="grid grid-cols-4 gap-x-8 gap-y-16 max-w-4xl mx-auto">
-            {/* Center Cross */}
-            <div className="col-start-2 row-start-1">
-              <div className="relative">
-                <TarotCard name={drawnCards[0].name} isReversed={drawnCards[0].isReversed} />
-                <div className="absolute -bottom-20 left-0 right-0 text-center">
-                  <p className="text-sm font-medium text-white mb-2">{celticPositions[0].name}</p>
-                  <p className="text-xs text-surface-300/70 leading-relaxed">{celticPositions[0].desc}</p>
-                </div>
+        <div className="grid grid-cols-4 gap-x-8 gap-y-16 max-w-4xl mx-auto">
+          {/* Center Cross */}
+          <div className="col-start-2 row-start-1">
+            <div className="relative">
+              <TarotCard name={drawnCards[0].name} isReversed={drawnCards[0].isReversed} />
+              <div className="absolute -bottom-20 left-0 right-0 text-center">
+                <p className="text-sm font-medium text-white mb-2">{celticPositions[0].name}</p>
+                <p className="text-xs text-indigo-200/70 leading-relaxed">{celticPositions[0].desc}</p>
               </div>
             </div>
+          </div>
 
-            <div className="col-start-2 row-start-2">
-              <div className="relative">
-                <TarotCard name={drwnCards[1].name} isReversed={drawnCards[1].isReversed} />
-                <div className="absolute -bottom-20 left-0 right-0 text-center">
-                  <p className="text-sm font-medium text-white mb-2">{celticPositions[1].name}</p>
-                  <p className="text-xs text-surface-300/70 leading-relaxed">{celticPositions[1].desc}</p>
-                </div>
+          <div className="col-start-2 row-start-2">
+            <div className="relative">
+              <TarotCard name={drawnCards[1].name} isReversed={drawnCards[1].isReversed} />
+              <div className="absolute -bottom-20 left-0 right-0 text-center">
+                <p className="text-sm font-medium text-white mb-2">{celticPositions[1].name}</p>
+                <p className="text-xs text-indigo-200/70 leading-relaxed">{celticPositions[1].desc}</p>
               </div>
             </div>
+          </div>
 
-            <div className="col-start-1 row-start-2">
-              <div className="relative">
-                <TarotCard name={drawnCards[2].name} isReversed={drawnCards[2].isReversed} />
-                <div className="absolute -bottom-20 left-0 right-0 text-center">
-                  <p className="text-sm font-medium text-white mb-2">{celticPositions[2].name}</p>
-                  <p className="text-xs text-surface-300/70 leading-relaxed">{celticPositions[2].desc}</p>
-                </div>
+          <div className="col-start-1 row-start-2">
+            <div className="relative">
+              <TarotCard name={drawnCards[2].name} isReversed={drawnCards[2].isReversed} />
+              <div className="absolute -bottom-20 left-0 right-0 text-center">
+                <p className="text-sm font-medium text-white mb-2">{celticPositions[2].name}</p>
+                <p className="text-xs text-indigo-200/70 leading-relaxed">{celticPositions[2].desc}</p>
               </div>
             </div>
+          </div>
 
-            <div className="col-start-3 row-start-2">
-              <div className="relative">
-                <TarotCard name={drawnCards[3].name} isReversed={drawnCards[3].isReversed} />
-                <div className="absolute -bottom-20 left-0 right-0 text-center">
-                  <p className="text-sm font-medium text-white mb-2">{celticPositions[3].name}</p>
-                  <p className="text-xs text-surface-300/70 leading-relaxed">{celticPositions[3].desc}</p>
-                </div>
+          <div className="col-start-3 row-start-2">
+            <div className="relative">
+              <TarotCard name={drawnCards[3].name} isReversed={drawnCards[3].isReversed} />
+              <div className="absolute -bottom-20 left-0 right-0 text-center">
+                <p className="text-sm font-medium text-white mb-2">{celticPositions[3].name}</p>
+                <p className="text-xs text-indigo-200/70 leading-relaxed">{celticPositions[3].desc}</p>
               </div>
             </div>
+          </div>
 
-            {/* Staff */}
-            <div className="col-start-4 row-start-1">
-              <div className="relative">
-                <TarotCard name={drawnCards[4].name} isReversed={drawnCards[4].isReversed} />
-                <div className="absolute -bottom-20 left-0 right-0 text-center">
-                  <p className="text-sm font-medium text-white mb-2">{celticPositions[4].name}</p>
-                  <p className="text-xs text-surface-300/70 leading-relaxed">{celticPositions[4].desc}</p>
-                </div>
+          {/* Staff */}
+          <div className="col-start-4 row-start-1">
+            <div className="relative">
+              <TarotCard name={drawnCards[4].name} isReversed={drawnCards[4].isReversed} />
+              <div className="absolute -bottom-20 left-0 right-0 text-center">
+                <p className="text-sm font-medium text-white mb-2">{celticPositions[4].name}</p>
+                <p className="text-xs text-indigo-200/70 leading-relaxed">{celticPositions[4].desc}</p>
               </div>
             </div>
+          </div>
 
-            <div className="col-start-4 row-start-2">
-              <div className="relative">
-                <TarotCard name={drawnCards[5].name} isReversed={drawnCards[5].isReversed} />
-                <div className="absolute -bottom-20 left-0 right-0 text-center">
-                  <p className="text-sm font-medium text-white mb-2">{celticPositions[5].name}</p>
-                  <p className="text-xs text-surface-300/70 leading-relaxed">{celticPositions[5].desc}</p>
-                </div>
+          <div className="col-start-4 row-start-2">
+            <div className="relative">
+              <TarotCard name={drawnCards[5].name} isReversed={drawnCards[5].isReversed} />
+              <div className="absolute -bottom-20 left-0 right-0 text-center">
+                <p className="text-sm font-medium text-white mb-2">{celticPositions[5].name}</p>
+                <p className="text-xs text-indigo-200/70 leading-relaxed">{celticPositions[5].desc}</p>
               </div>
             </div>
+          </div>
 
-            <div className="col-start-4 row-start-3">
-              <div className="relative">
-                <TarotCard name={drawnCards[6].name} isReversed={drawnCards[6].isReversed} />
-                <div className="absolute -bottom-20 left-0 right-0 text-center">
-                  <p className="text-sm font-medium text-white mb-2">{celticPositions[6].name}</p>
-                  <p className="text-xs text-surface-300/70 leading-relaxed">{celticPositions[6].desc}</p>
-                </div>
+          <div className="col-start-4 row-start-3">
+            <div className="relative">
+              <TarotCard name={drawnCards[6].name} isReversed={drawnCards[6].isReversed} />
+              <div className="absolute -bottom-20 left-0 right-0 text-center">
+                <p className="text-sm font-medium text-white mb-2">{celticPositions[6].name}</p>
+                <p className="text-xs text-indigo-200/70 leading-relaxed">{celticPositions[6].desc}</p>
               </div>
             </div>
+          </div>
 
-            <div className="col-start-4 row-start-4">
-              <div className="relative">
-                <TarotCard name={drawnCards[7].name} isReversed={drawnCards[7].isReversed} />
-                <div className="absolute -bottom-20 left-0 right-0 text-center">
-                  <p className="text-sm font-medium text-white mb-2">{celticPositions[7].name}</p>
-                  <p className="text-xs text-surface-300/70 leading-relaxed">{celticPositions[7].desc}</p>
-                </div>
+          <div className="col-start-4 row-start-4">
+            <div className="relative">
+              <TarotCard name={drawnCards[7].name} isReversed={drawnCards[7].isReversed} />
+              <div className="absolute -bottom-20 left-0 right-0 text-center">
+                <p className="text-sm font-medium text-white mb-2">{celticPositions[7].name}</p>
+                <p className="text-xs text-indigo-200/70 leading-relaxed">{celticPositions[7].desc}</p>
               </div>
             </div>
+          </div>
 
-            <div className="col-start-4 row-start-5">
-              <div className="relative">
-                <TarotCard name={drawnCards[8].name} isReversed={drawnCards[8].isReversed} />
-                <div className="absolute -bottom-20 left-0 right-0 text-center">
-                  <p className="text-sm font-medium text-white mb-2">{celticPositions[8].name}</p>
-                  <p className="text-xs text-surface-300/70 leading-relaxed">{celticPositions[8].desc}</p>
-                </div>
+          <div className="col-start-4 row-start-5">
+            <div className="relative">
+              <TarotCard name={drawnCards[8].name} isReversed={drawnCards[8].isReversed} />
+              <div className="absolute -bottom-20 left-0 right-0 text-center">
+                <p className="text-sm font-medium text-white mb-2">{celticPositions[8].name}</p>
+                <p className="text-xs text-indigo-200/70 leading-relaxed">{celticPositions[8].desc}</p>
               </div>
             </div>
+          </div>
 
-            <div className="col-start-4 row-start-6">
-              <div className="relative">
-                <TarotCard name={drawnCards[9].name} isReversed={drawnCards[9].isReversed} />
-                <div className="absolute -bottom-20 left-0 right-0 text-center">
-                  <p className="text-sm font-medium text-white mb-2">{celticPositions[9].name}</p>
-                  <p className="text-xs text-surface-300/70 leading-relaxed">{celticPositions[9].desc}</p>
-                </div>
+          <div className="col-start-4 row-start-6">
+            <div className="relative">
+              <TarotCard name={drawnCards[9].name} isReversed={drawnCards[9].isReversed} />
+              <div className="absolute -bottom-20 left-0 right-0 text-center">
+                <p className="text-sm font-medium text-white mb-2">{celticPositions[9].name}</p>
+                <p className="text-xs text-indigo-200/70 leading-relaxed">{celticPositions[9].desc}</p>
               </div>
             </div>
           </div>
@@ -268,11 +266,11 @@ export const DrawCards: React.FC = () => {
           <h4 className="text-lg font-semibold text-white">详细解读</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {drawnCards.map((card, index) => (
-              <div key={index} className="bg-surface-800/20 rounded-lg p-6">
-                <h5 className="text-surface-300 font-medium mb-3">
+              <div key={index} className="bg-blue-900/20 rounded-lg p-6">
+                <h5 className="text-indigo-300 font-medium mb-3">
                   {celticPositions[index].name}
                 </h5>
-                <p className="text-sm text-surface-200/90 mb-4 leading-relaxed">
+                <p className="text-sm text-indigo-200/90 mb-4 leading-relaxed">
                   {celticPositions[index].desc}
                 </p>
                 <div className="space-y-4">
@@ -305,7 +303,7 @@ export const DrawCards: React.FC = () => {
               <h4 className="text-lg font-semibold text-white mb-2">
                 {getPositionName(selectedSpread, 0)}
               </h4>
-              <p className="text-surface-200/80">
+              <p className="text-indigo-200/80">
                 {generateCardMeaning(drawnCards[0])}
               </p>
             </div>
@@ -327,7 +325,7 @@ export const DrawCards: React.FC = () => {
                   <h4 className="text-lg font-semibold text-white mb-2">
                     {getPositionName(selectedSpread, index)}
                   </h4>
-                  <p className="text-sm text-surface-200/80">
+                  <p className="text-sm text-indigo-200/80">
                     {generateCardMeaning(card)}
                   </p>
                 </div>
@@ -357,7 +355,7 @@ export const DrawCards: React.FC = () => {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
-        <WifiOff className="w-16 h-16 text-surface-300/50 mb-4" />
+        <WifiOff className="w-16 h-16 text-indigo-300/50 mb-4" />
         <h3 className="text-lg font-semibold text-white mb-2">{error}</h3>
         <button
           onClick={() => {
@@ -365,7 +363,7 @@ export const DrawCards: React.FC = () => {
             setSelectedSpread(null);
             setDrawnCards([]);
           }}
-          className="mt-4 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg transition-colors"
+          className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors"
         >
           重试
         </button>
@@ -381,7 +379,7 @@ export const DrawCards: React.FC = () => {
           alt="抽牌中"
           className="w-32 h-32 mb-4"
         />
-        <p className="text-lg text-surface-200">抽牌中...</p>
+        <p className="text-lg text-indigo-200">抽牌中...</p>
       </div>
     );
   }
@@ -393,10 +391,10 @@ export const DrawCards: React.FC = () => {
           {(selectedSpread || drawnCards.length > 0) && (
             <button 
               onClick={handleBack}
-              className="mr-4 p-2 hover:bg-surface-800/30 rounded-full transition-colors"
+              className="mr-4 p-2 hover:bg-blue-800/30 rounded-full transition-colors"
               aria-label="返回"
             >
-              <ArrowLeft className="w-6 h-6 text-surface-200" />
+              <ArrowLeft className="w-6 h-6 text-indigo-200" />
             </button>
           )}
           <h2 className="text-2xl font-bold text-white">{getSpreadName()}</h2>
@@ -405,7 +403,7 @@ export const DrawCards: React.FC = () => {
       
       {!selectedSpread && !drawnCards.length && (
         <div className="space-y-4">
-          <p className="text-surface-200/80 mb-6">选择一个牌阵开始解读：</p>
+          <p className="text-indigo-200/80 mb-6">选择一个牌阵开始解读：</p>
           
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {spreads.map((spread) => (
@@ -415,11 +413,11 @@ export const DrawCards: React.FC = () => {
                   setSelectedSpread(spread.id);
                   drawCards(spread.count, spread.name, spread.id);
                 }}
-                className="bg-surface-800/30 backdrop-blur-sm hover:bg-surface-800/50 transition-all border border-surface-700/40 rounded-xl p-4 text-center hover:scale-105 duration-300"
+                className="bg-blue-800/30 backdrop-blur-sm hover:bg-blue-800/50 transition-all border border-blue-700/40 rounded-xl p-4 text-center hover:scale-105 duration-300"
               >
                 <h3 className="text-lg font-semibold text-white">{spread.name}</h3>
-                <p className="text-xs text-surface-200/70 mt-1">{spread.description}</p>
-                <p className="text-xs text-surface-200/70 mt-2">{spread.count} 张牌</p>
+                <p className="text-xs text-indigo-200/70 mt-1">{spread.description}</p>
+                <p className="text-xs text-indigo-200/70 mt-2">{spread.count} 张牌</p>
               </button>
             ))}
           </div>
@@ -431,25 +429,25 @@ export const DrawCards: React.FC = () => {
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-semibold text-white">塔罗解读</h3>
             <div className="flex space-x-3">
-              <button className="p-2 rounded-full bg-surface-800/50 text-surface-200">
+              <button className="p-2 rounded-full bg-blue-800/50 text-indigo-200">
                 <Info className="w-5 h-5" />
               </button>
-              <button className="p-2 rounded-full bg-surface-800/50 text-surface-200">
+              <button className="p-2 rounded-full bg-blue-800/50 text-indigo-200">
                 <Share2 className="w-5 h-5" />
               </button>
-              <button className="p-2 rounded-full bg-surface-800/50 text-surface-200">
+              <button className="p-2 rounded-full bg-blue-800/50 text-indigo-200">
                 <Save className="w-5 h-5" />
               </button>
             </div>
           </div>
           
-          <div className="bg-surface-800/20 backdrop-blur-sm rounded-xl p-6 border border-surface-700/30">
+          <div className="bg-blue-900/20 backdrop-blur-sm rounded-xl p-6 border border-blue-700/30">
             {renderCardLayout()}
           </div>
           
           <button 
             onClick={handleBack}
-            className="bg-primary-600 hover:bg-primary-700 text-white px-6 py-2 rounded-lg transition-colors mx-auto block mt-6"
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg transition-colors mx-auto block mt-6"
           >
             重新抽牌
           </button>
