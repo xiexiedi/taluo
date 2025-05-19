@@ -98,8 +98,6 @@ export const TarotCard: React.FC<TarotCardProps> = ({
   const [isFlipped, setIsFlipped] = useState(false);
   const [showFullscreen, setShowFullscreen] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isInteractionDisabled, setIsInteractionDisabled] = useState(false);
 
   const getCardImageUrl = (cardName: string): string => {
     const chineseName = cardNameMap[cardName];
@@ -117,22 +115,11 @@ export const TarotCard: React.FC<TarotCardProps> = ({
 
   const toggleFullscreen = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (isInteractionDisabled) return;
     setShowFullscreen(!showFullscreen);
   };
 
-  const handleFlip = async (e: React.MouseEvent) => {
+  const handleFlip = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (isInteractionDisabled) return;
-
-    setIsLoading(true);
-    setIsInteractionDisabled(true);
-
-    // 等待一个完整的动画循环
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    setIsLoading(false);
-    setIsInteractionDisabled(false);
     setIsFlipped(!isFlipped);
   };
 
@@ -188,17 +175,6 @@ export const TarotCard: React.FC<TarotCardProps> = ({
               )}
             </div>
           </div>
-
-          {/* Loading Animation */}
-          {isLoading && (
-            <div className="absolute inset-0 flex items-center justify-center z-10 bg-black/50 rounded-lg">
-              <img 
-                src="/素材库/加载动画 copy.gif"
-                alt="加载中"
-                className="w-16 h-16"
-              />
-            </div>
-          )}
         </div>
       </div>
 
