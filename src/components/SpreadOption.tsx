@@ -18,14 +18,14 @@ export const SpreadOption: React.FC<SpreadOptionProps> = ({
       cards.push(
         <div 
           key={i}
-          className="absolute bg-primary-600/20 backdrop-blur-sm rounded-md border border-primary-500/30 shadow-glow"
+          className="absolute bg-surface-800/80 rounded-md border border-surface-600/30 shadow-inner-glow"
           style={{
             width: '20px',
             height: '30px',
             transform: `rotate(${(i * 15) - (cardCount * 5)}deg)`,
             transformOrigin: 'bottom center',
             left: '50%',
-            marginLeft: '-10px',
+            marginLeft: '-10px', // 卡片宽度的一半，确保居中
             bottom: '10px'
           }}
         />
@@ -36,8 +36,7 @@ export const SpreadOption: React.FC<SpreadOptionProps> = ({
 
   return (
     <div 
-      className="flex-shrink-0 w-44 h-40 bg-surface-800/80 backdrop-blur-md rounded-xl border border-surface-700/50 p-4 
-        flex flex-col justify-between cursor-pointer hover:border-primary-500/50 hover:shadow-glow transition-all duration-300 hover:scale-105"
+      className="flex-shrink-0 w-44 h-40 card p-4 flex flex-col justify-between cursor-pointer hover:scale-105 duration-300"
     >
       <div>
         <h4 className="font-semibold text-white">{title}</h4>
